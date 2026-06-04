@@ -1,0 +1,750 @@
+import React, { useState, useRef } from 'react';
+import {
+  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  TextInput, Alert, StatusBar, Modal, Image,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+type Props = NativeStackScreenProps<any, 'NewTradeLicense'>;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const TOTAL_STEPS = 4;
+const STEP_LABELS = ['ব্যবসার তথ্য', 'ঠিকানা', 'ফি ও অবস্থান', 'সংযুক্তি'];
+
+const BOTTOM_TABS = [
+  { key: 'home',    label: 'হোম',            icon: 'home-outline' },
+  { key: 'holding', label: 'হোল্ডিং ট্যাক্স', icon: 'office-building-outline' },
+  { key: 'trade',   label: 'ট্রেড লাইসেন্স',  icon: 'license' },
+  { key: 'hotel',   label: 'হোটেল ট্যাক্স',   icon: 'bed-outline' },
+];
+
+// ─── Dropdown Options ──────────────────────────────────────────────────────────
+const BUSINESS_TYPE_1 = ['রেস্তোরাঁ', 'ফার্মেসি', 'কাপড়ের দোকান', 'মুদি দোকান', 'ইলেকট্রনিক্স', 'অন্যান্য'];
+const BUSINESS_TYPE_2 = ['রেস্তোরাঁ', 'ফার্মেসি', 'কাপড়ের দোকান', 'মুদি দোকান', 'ইলেকট্রনিক্স', 'অন্যান্য'];
+
+const BUSINESS_NATURE = ['একক মালিকানা', 'অংশীদারিত্ব', 'লিমিটেড কোম্পানি', 'অন্যান্য'];
+const BUSINESS_PLACE  = ['নিজের', 'ভাড়া'];
+const YES_NO          = ['হাঁ', 'না'];
+const FLOOR_OPTIONS   = ['নীচতলা', '১ম তলা', '২য় তলা', '৩য় তলা', '৪র্থ তলা+'];
+const YEAR_OPTIONS    = ['১', '২', '৩', '৪', '৫'];
+const SIGNBOARD_FEE   = ['সাইন বোর্ড ফি', '৫০০', '১০০০', '১৫০০'];
+
+// ─── Cascading location data ───────────────────────────────────────────────────
+const CASCADE: Record<string, Record<string, Record<string, Record<string, string[]>>>> = {
+  'অঞ্চল ১': { 'ওয়ার্ড ১': { 'সেক্টর এ': { 'ব্লক ১': ['রোড ১','রোড ২'],'ব্লক ২':['রোড ৩'] } },'ওয়ার্ড ২': { 'সেক্টর বি': { 'ব্লক ৩': ['রোড ৪','রোড ৫'] } } },
+  'অঞ্চল ২': { 'ওয়ার্ড ৩': { 'সেক্টর সি': { 'ব্লক ৪': ['রোড ৬','রোড ৭'] } },'ওয়ার্ড ৪': { 'সেক্টর ডি': { 'ব্লক ৫': ['রোড ৮','রোড ৯'] } } },
+  'অঞ্চল ৩': { 'ওয়ার্ড ৫': { 'সেক্টর ই': { 'ব্লক ৬': ['রোড ১০','রোড ১১'] } } },
+};
+const zonesOf   = () => Object.keys(CASCADE);
+const wardsOf   = (z: string) => z ? Object.keys(CASCADE[z] ?? {}) : [];
+const sectorsOf = (z: string, w: string) => (z && w) ? Object.keys(CASCADE[z]?.[w] ?? {}) : [];
+const areasOf   = (z: string, w: string, s: string) => (z && w && s) ? Object.keys(CASCADE[z]?.[w]?.[s] ?? {}) : [];
+const roadsOf   = (z: string, w: string, s: string, a: string) => (z && w && s && a) ? (CASCADE[z]?.[w]?.[s]?.[a] ?? []) : [];
+
+// ─── Attachment types ──────────────────────────────────────────────────────────
+const ATTACHMENT_OPTIONS = [
+  'মালিকের সত্যায়িত ছবি ০০ (তিন) কপি',
+  'ট্রেড লাইসেন্সের কপি',
+  'জাতীয় পরিচয়পত্রের কপি',
+  'ভাড়া চুক্তির কপি',
+  'অন্যান্য',
+];
+
+interface AttachmentEntry { id: string; uri: string; name: string; isImage: boolean; }
+interface AttachmentSection { key: string; label: string; checked: boolean; expanded: boolean; aid: string; remark: string; files: AttachmentEntry[]; }
+
+const INITIAL_SECTIONS: AttachmentSection[] = ATTACHMENT_OPTIONS.map((label, i) => ({
+  key: `a${i}`, label, checked: false, expanded: false, aid: '', remark: '', files: [],
+}));
+
+// ─── Reusable UI ──────────────────────────────────────────────────────────────
+function FieldLabel({ text, required }: { text: string; required?: boolean }) {
+  return <Text style={styles.fieldLabel}>{text}{required && <Text style={styles.required}> (*)</Text>}</Text>;
+}
+
+function StyledInput({ value, onChangeText, placeholder, keyboardType, multiline, editable = true }: {
+  value: string; onChangeText?: (v: string) => void; placeholder?: string;
+  keyboardType?: any; multiline?: boolean; editable?: boolean;
+}) {
+  return (
+    <View style={[styles.inputWrapper, multiline && styles.inputMulti, !editable && styles.inputDisabled]}>
+      <TextInput style={[styles.textInput, multiline && styles.textMulti]}
+        value={value} onChangeText={onChangeText} placeholder={placeholder}
+        placeholderTextColor={Colors.gray400} keyboardType={keyboardType ?? 'default'}
+        multiline={multiline} numberOfLines={multiline ? 3 : 1} editable={editable} />
+    </View>
+  );
+}
+
+function Dropdown({ value, options, onSelect, placeholder, disabled }: {
+  value: string; options: string[]; onSelect: (v: string) => void; placeholder?: string; disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ zIndex: open ? 99 : 1 }}>
+      <TouchableOpacity style={[styles.dropTrigger, disabled && styles.dropDisabled]}
+        onPress={() => !disabled && options.length > 0 && setOpen(v => !v)} activeOpacity={disabled ? 1 : 0.8}>
+        <Text style={[styles.dropValue, !value && styles.dropPlaceholder]}>{value || placeholder || 'নির্বাচন করুন'}</Text>
+        <MaterialIcons name={open ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={20} color={disabled ? Colors.gray300 : Colors.gray500} />
+      </TouchableOpacity>
+      {open && (
+        <View style={styles.dropList}>
+          {options.map(opt => (
+            <TouchableOpacity key={opt} style={[styles.dropOption, opt === value && styles.dropOptionSel]}
+              onPress={() => { onSelect(opt); setOpen(false); }}>
+              <Text style={[styles.dropOptionText, opt === value && styles.dropOptionTextSel]}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function SectionHeader({ emoji, title }: { emoji: string; title: string }) {
+  return (
+    <View style={styles.secHeaderRow}>
+      <Text style={styles.secHeaderEmoji}>{emoji}</Text>
+      <Text style={styles.secHeaderText}>{title}</Text>
+    </View>
+  );
+}
+
+function Divider() { return <View style={styles.divider} />; }
+
+function SubTitle({ text }: { text: string }) {
+  return <Text style={styles.subTitle}>{text}</Text>;
+}
+
+function FileUploadRow({ onPick }: { onPick: () => void }) {
+  return (
+    <View style={styles.fileRow}>
+      <TouchableOpacity style={styles.chooseFileBtn} onPress={onPick}>
+        <Text style={styles.chooseFileBtnText}>Choose File</Text>
+      </TouchableOpacity>
+      <View style={styles.fileNameBox}><Text style={styles.fileNameText}>No File Chosen</Text></View>
+      <TouchableOpacity style={styles.uploadBtn} onPress={onPick}>
+        <Text style={styles.uploadBtnText}>Upload</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ─── Step Indicator ────────────────────────────────────────────────────────────
+function StepIndicator({ current }: { current: number }) {
+  return (
+    <View style={styles.stepRow}>
+      {STEP_LABELS.map((label, idx) => {
+        const n = idx + 1; const done = n < current; const active = n === current;
+        return (
+          <React.Fragment key={n}>
+            {idx > 0 && <View style={[styles.stepLine, (done || active) && styles.stepLineActive]} />}
+            <View style={styles.stepCol}>
+              <View style={[styles.stepCircle, active && styles.stepCircleActive, done && styles.stepCircleDone]}>
+                {done ? <MaterialIcons name="check" size={13} color={Colors.white} />
+                       : <Text style={[styles.stepNum, active && styles.stepNumActive]}>{n}</Text>}
+              </View>
+              <Text style={[styles.stepLabel, active && styles.stepLabelActive]}>{label}</Text>
+            </View>
+          </React.Fragment>
+        );
+      })}
+    </View>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+export function TradeLicenseApplicationScreen({ navigation }: Props) {
+  const [activeTab, setActiveTab] = useState('trade');
+  const [step, setStep]           = useState(1);
+  const scrollRef                 = useRef<ScrollView>(null);
+  const [agreed, setAgreed]       = useState(false);
+  const [showPickerSheet, setShowPickerSheet] = useState(false);
+  const [activeAttachKey, setActiveAttachKey] = useState('');
+  const [sections, setSections]   = useState<AttachmentSection[]>(INITIAL_SECTIONS);
+  const [previewEntry, setPreviewEntry] = useState<AttachmentEntry | null>(null);
+
+  // ── Form state ───────────────────────────────────────────────────────────────
+  const [f, setF] = useState({
+    // Step 1 — Business info
+    fiscalYear: '২০২৫-২০২৬',
+    bizType1: '', bizType2: '', licenseFee: '',
+    bizName: '', bizNature: '-', paidCapital: '',
+    applicantNameBn: '', applicantNameEn: '',
+    fatherNameBn: '', fatherNameEn: '',
+    motherNameBn: '', motherNameEn: '',
+    spouseNameBn: '', spouseNameEn: '',
+    relationship: '',
+    // Step 2 — Address
+    permVillage: '', permThana: '', permHolding: '', permDivision: '', permPO: '', permDistrict: '', permRoad: '',
+    curHolding: '', curRoad: '', curVillage: '', curPostcode: '', curThana: '', curDistrict: '', curDivision: '',
+    residenceAddress: '', proposedAddress: '',
+    nid: '', nationality: '', passport: '', birthRegNo: '', binNo: '',
+    bizStartDate: '', bizCapital: '',
+    // Step 3 — Location & Fees
+    zone: '', ward: '', sector: '', area: '', road: '',
+    plotNo: '', shopNo: '',
+    taxDocNo: '',
+    bizPlace: 'নিজের',
+    hasSignBoard: 'হাঁ',
+    hasRent: 'না',
+    floor: 'নীচতলা',
+    onGovtLand: 'হাঁ',
+    email: '', mobile: '01900000000', otherId: '',
+    signBoardSqft: '০', signBoardFee: 'সাইন বোর্ড ফি',
+    bookPrice: '২৭০', formFee: '০', otherFee: '৫০০',
+    yearsOfFee: '১',
+    annualVat: '০', totalVat: '০', incomeTax: '০', grandTotal: '০',
+  });
+
+  const set = (field: string) => (value: string) => setF(p => ({ ...p, [field]: value }));
+  const setZone   = (v: string) => setF(p => ({ ...p, zone: v, ward: '', sector: '', area: '', road: '' }));
+  const setWard   = (v: string) => setF(p => ({ ...p, ward: v, sector: '', area: '', road: '' }));
+  const setSector = (v: string) => setF(p => ({ ...p, sector: v, area: '', road: '' }));
+  const setArea   = (v: string) => setF(p => ({ ...p, area: v, road: '' }));
+
+  const scrollToTop = () => scrollRef.current?.scrollTo({ y: 0, animated: true });
+
+  const handleCalc = () => {
+    const base = parseFloat(f.licenseFee || '1500');
+    const years = parseInt(f.yearsOfFee || '1');
+    const vat = base * 0.15 * years;
+    const tax = base * 0.05 * years;
+    const total = (base + vat + tax) * years;
+    setF(p => ({ ...p, annualVat: vat.toFixed(0), totalVat: (vat * years).toFixed(0), incomeTax: tax.toFixed(0), grandTotal: total.toFixed(0) }));
+  };
+
+  const validateStep = () => {
+    if (step === 1 && (!f.bizName || !f.bizNature || !f.paidCapital)) {
+      Alert.alert('ত্রুটি', 'অনুগ্রহ করে বাধ্যতামূলক (*) ক্ষেত্রগুলো পূরণ করুন।'); return false;
+    }
+    if (step === 3 && (!f.zone || !f.ward || !f.sector || !f.area || !f.road)) {
+      Alert.alert('ত্রুটি', 'অনুগ্রহ করে সম্পত্তির অবস্থান পূরণ করুন।'); return false;
+    }
+    return true;
+  };
+
+  const goNext = () => { if (!validateStep()) return; setStep(s => Math.min(s + 1, TOTAL_STEPS)); scrollToTop(); };
+  const goPrev = () => { setStep(s => Math.max(s - 1, 1)); scrollToTop(); };
+
+  const handleSubmit = () => {
+    if (!agreed) { Alert.alert('ত্রুটি', 'অনুগ্রহ করে শর্তাবলীতে সম্মতি দিন।'); return; }
+    Alert.alert('সফল', 'আপনার ট্রেড লাইসেন্সের আবেদন সফলভাবে জমা দেওয়া হয়েছে।', [
+      { text: 'ঠিক আছে', onPress: () => navigation.goBack() },
+    ]);
+  };
+
+  // ── Attachment helpers ─────────────────────────────────────────────────────
+  const updateSection = (key: string, patch: Partial<AttachmentSection>) =>
+    setSections(prev => prev.map(s => s.key === key ? { ...s, ...patch } : s));
+  const toggleChecked  = (key: string) => setSections(prev => prev.map(s => s.key === key ? { ...s, checked: !s.checked, expanded: !s.checked } : s));
+  const toggleExpanded = (key: string) => setSections(prev => prev.map(s => s.key === key ? { ...s, expanded: !s.expanded } : s));
+  const openPickerFor  = (key: string) => { setActiveAttachKey(key); setShowPickerSheet(true); };
+  const addFile = (uri: string, name: string, isImage: boolean) => {
+    const entry: AttachmentEntry = { id: Date.now().toString(), uri, name, isImage };
+    setSections(prev => prev.map(s => s.key === activeAttachKey ? { ...s, files: [...s.files, entry] } : s));
+    setActiveAttachKey('');
+  };
+  const deleteFile = (sk: string, fid: string) => {
+    Alert.alert('মুছুন', 'এই ফাইলটি মুছতে চান?', [
+      { text: 'না' },
+      { text: 'হ্যাঁ', style: 'destructive', onPress: () => setSections(prev => prev.map(s => s.key === sk ? { ...s, files: s.files.filter(f => f.id !== fid) } : s)) },
+    ]);
+  };
+  const pickFromGallery = async () => {
+    setShowPickerSheet(false);
+    const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!p.granted) return;
+    const r = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+    if (!r.canceled && r.assets[0]) addFile(r.assets[0].uri, r.assets[0].fileName ?? 'image.jpg', true);
+  };
+  const pickFromCamera = async () => {
+    setShowPickerSheet(false);
+    const p = await ImagePicker.requestCameraPermissionsAsync();
+    if (!p.granted) return;
+    const r = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+    if (!r.canceled && r.assets[0]) addFile(r.assets[0].uri, r.assets[0].fileName ?? 'photo.jpg', true);
+  };
+  const pickDocument = async () => {
+    setShowPickerSheet(false);
+    const r = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+    if (!r.canceled && r.assets[0]) addFile(r.assets[0].uri, r.assets[0].name, false);
+  };
+
+  // ── Step renders ─────────────────────────────────────────────────────────────
+  const renderStep1 = () => (
+    <>
+      {/* Business nature section */}
+      <View style={styles.card}>
+        <SectionHeader emoji="🖐" title="সম্পত্তির অবস্থান" />
+        <Divider />
+        <FieldLabel text="অর্থ বছর" />
+        <StyledInput value={f.fiscalYear} onChangeText={set('fiscalYear')} editable={false} />
+        <FieldLabel text="ব্যবসার ধরণ ১" />
+        <Dropdown value={f.bizType1} options={BUSINESS_TYPE_1} onSelect={set('bizType1')} placeholder="ব্যবসার ধরণ ১" />
+        <FieldLabel text="ব্যবসার ধরণ ২" />
+        <Dropdown value={f.bizType2} options={BUSINESS_TYPE_2} onSelect={set('bizType2')} placeholder="ব্যবসার ধরণ ২" />
+        <FieldLabel text="লাইসেন্স ফি" />
+        <StyledInput value={f.licenseFee} onChangeText={set('licenseFee')} keyboardType="numeric" />
+        <TouchableOpacity style={styles.attachBtn} activeOpacity={0.8}>
+          <Text style={styles.attachBtnText}>সংযুক্ত করুন</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Business details */}
+      <View style={styles.card}>
+        <SectionHeader emoji="🖐" title="ব্যবসার বিবরণ" />
+        <Divider />
+        <FieldLabel text="ব্যবসা প্রতিষ্ঠানের নাম" required />
+        <StyledInput value={f.bizName} onChangeText={set('bizName')} />
+        <FieldLabel text="ব্যবসা প্রতিষ্ঠানের প্রকৃতি" required />
+        <Dropdown value={f.bizNature} options={BUSINESS_NATURE} onSelect={set('bizNature')} />
+        <FieldLabel text="পরিশোধিত মূলধন (লি: কোম্পানির ক্ষেত্রে)" required />
+        <StyledInput value={f.paidCapital} onChangeText={set('paidCapital')} keyboardType="numeric" />
+        <FieldLabel text="আবেদনকারীর নাম (বাংলা)" />
+        <StyledInput value={f.applicantNameBn} onChangeText={set('applicantNameBn')} />
+        <FieldLabel text="আবেদনকারীর নাম (ইংরেজি)" />
+        <StyledInput value={f.applicantNameEn} onChangeText={set('applicantNameEn')} />
+        <FieldLabel text="আবেদনকারীর পিতার নাম (বাংলা)" />
+        <StyledInput value={f.fatherNameBn} onChangeText={set('fatherNameBn')} />
+        <FieldLabel text="আবেদনকারীর পিতার নাম (ইংরেজি)" />
+        <StyledInput value={f.fatherNameEn} onChangeText={set('fatherNameEn')} />
+        <FieldLabel text="আবেদনকারীর মাতার নাম (বাংলা)" />
+        <StyledInput value={f.motherNameBn} onChangeText={set('motherNameBn')} />
+        <FieldLabel text="আবেদনকারীর মাতার নাম (ইংরেজি)" />
+        <StyledInput value={f.motherNameEn} onChangeText={set('motherNameEn')} />
+        <FieldLabel text="স্বামী / স্ত্রীর নাম (বাংলা)" />
+        <StyledInput value={f.spouseNameBn} onChangeText={set('spouseNameBn')} />
+        <FieldLabel text="স্বামী / স্ত্রীর নাম (ইংরেজি)" />
+        <StyledInput value={f.spouseNameEn} onChangeText={set('spouseNameEn')} />
+        <FieldLabel text="প্রতিষ্ঠানের সাথে আবেদনকারীর সম্পর্ক" />
+        <StyledInput value={f.relationship} onChangeText={set('relationship')} />
+      </View>
+    </>
+  );
+
+  const renderStep2 = () => (
+    <>
+      {/* Permanent address */}
+      <View style={styles.card}>
+        <SectionHeader emoji="🖐" title="আবেদনকারীর স্থায়ী ঠিকানা" />
+        <Divider />
+        <FieldLabel text="গ্রাম / মহল্লা" /><StyledInput value={f.permVillage} onChangeText={set('permVillage')} />
+        <FieldLabel text="থানা" /><StyledInput value={f.permThana} onChangeText={set('permThana')} />
+        <FieldLabel text="হোল্ডিং নং" /><StyledInput value={f.permHolding} onChangeText={set('permHolding')} />
+        <FieldLabel text="বিভাগ" /><StyledInput value={f.permDivision} onChangeText={set('permDivision')} />
+        <FieldLabel text="পো" /><StyledInput value={f.permPO} onChangeText={set('permPO')} />
+        <FieldLabel text="জেলা" /><StyledInput value={f.permDistrict} onChangeText={set('permDistrict')} />
+        <FieldLabel text="রোড নং" /><StyledInput value={f.permRoad} onChangeText={set('permRoad')} />
+      </View>
+
+      {/* Current address */}
+      <View style={styles.card}>
+        <SubTitle text="মালিকের বর্তমান ঠিকানা" />
+        <FieldLabel text="হোল্ডিং নং" /><StyledInput value={f.curHolding} onChangeText={set('curHolding')} />
+        <FieldLabel text="রোড নং" /><StyledInput value={f.curRoad} onChangeText={set('curRoad')} />
+        <FieldLabel text="গ্রাম / মহল্লা" /><StyledInput value={f.curVillage} onChangeText={set('curVillage')} />
+        <FieldLabel text="পোস্টকোড" /><StyledInput value={f.curPostcode} onChangeText={set('curPostcode')} keyboardType="numeric" />
+        <FieldLabel text="থানা" /><StyledInput value={f.curThana} onChangeText={set('curThana')} />
+        <FieldLabel text="জেলা" /><StyledInput value={f.curDistrict} onChangeText={set('curDistrict')} />
+        <FieldLabel text="বিভাগ" /><StyledInput value={f.curDivision} onChangeText={set('curDivision')} />
+      </View>
+
+      {/* Other info */}
+      <View style={styles.card}>
+        <FieldLabel text="আবেদনকারীর বসবাসের ঠিকানা" /><StyledInput value={f.residenceAddress} onChangeText={set('residenceAddress')} multiline />
+        <FieldLabel text="প্রস্তাবিত ব্যবসায়ের সঠিক ঠিকানা" required /><StyledInput value={f.proposedAddress} onChangeText={set('proposedAddress')} multiline />
+        <FieldLabel text="জাতীয় পরিচয়পত্র নম্বর" /><StyledInput value={f.nid} onChangeText={set('nid')} keyboardType="numeric" />
+        <FieldLabel text="আবেদনকারীর জাতীয়তা" /><StyledInput value={f.nationality} onChangeText={set('nationality')} />
+        <FieldLabel text="পাসপোর্ট" /><StyledInput value={f.passport} onChangeText={set('passport')} />
+        <FieldLabel text="জন্ম নিবন্ধন নং" /><StyledInput value={f.birthRegNo} onChangeText={set('birthRegNo')} />
+        <FieldLabel text="বিআইএন নং" /><StyledInput value={f.binNo} onChangeText={set('binNo')} />
+        <FieldLabel text="ব্যবসায়ের আরম্ভ করার তারিখ" required /><StyledInput value={f.bizStartDate} onChangeText={set('bizStartDate')} placeholder="dd/mm/yyyy" keyboardType="numeric" />
+        <FieldLabel text="ব্যবসায়ের মূলধন" /><StyledInput value={f.bizCapital} onChangeText={set('bizCapital')} keyboardType="numeric" />
+        <FieldLabel text="আয়কর প্রদান কিরলে প্রাপ্তি স্বীকার / প্রত্যয়ন পত্র" />
+        <StyledInput value={f.taxDocNo} onChangeText={set('taxDocNo')} />
+        <FileUploadRow onPick={() => {}} />
+      </View>
+    </>
+  );
+
+  const renderStep3 = () => (
+    <>
+      {/* Business property */}
+      <View style={styles.card}>
+        <SectionHeader emoji="🖐" title="ব্যবসার বিস্তারিত" />
+        <Divider />
+        <FieldLabel text="ব্যবসার জায়গা (ভাড়া//নিজের)" />
+        <Dropdown value={f.bizPlace} options={BUSINESS_PLACE} onSelect={set('bizPlace')} />
+        <FileUploadRow onPick={() => {}} />
+        <FieldLabel text="সাইন বোর্ড আছে কিনা?" />
+        <Dropdown value={f.hasSignBoard} options={YES_NO} onSelect={set('hasSignBoard')} />
+        <FieldLabel text="বাসা / দোকান ঘরের ভাড়া (নিজা বাড়ির জন্য ল্যান্ড ট্যাক্সের রশিদ সংযুক্ত করিতে হইবে)" />
+        <Dropdown value={f.hasRent} options={YES_NO} onSelect={set('hasRent')} />
+        <FieldLabel text="দোকান ঘর / অফিস কোন তলায়?" />
+        <Dropdown value={f.floor} options={FLOOR_OPTIONS} onSelect={set('floor')} />
+        <FieldLabel text="প্রস্তাবিত দোকান / ব্যবসায়ের স্থান, পৌর / সরকারি ভূমির উপর কিনা?" />
+        <Dropdown value={f.onGovtLand} options={YES_NO} onSelect={set('onGovtLand')} />
+        <FieldLabel text="আবেদনকারীর ইমেইল আইডি" />
+        <StyledInput value={f.email} onChangeText={set('email')} keyboardType="email-address" />
+        <FieldLabel text="আবেদনকারীর মোবাইল ফোন নং" />
+        <StyledInput value={f.mobile} onChangeText={set('mobile')} keyboardType="phone-pad" />
+        <FieldLabel text="অন্যান্য পরিচয়পত্র" />
+        <StyledInput value={f.otherId} onChangeText={set('otherId')} />
+      </View>
+
+      {/* Cascading location */}
+      <View style={styles.card}>
+        <SectionHeader emoji="🖐" title="সম্পত্তির অবস্থান" />
+        <Divider />
+        <FieldLabel text="অঞ্চল" required />
+        <Dropdown value={f.zone} options={zonesOf()} onSelect={setZone} placeholder="অঞ্চল" />
+        <FieldLabel text="ওয়ার্ড" required />
+        <Dropdown value={f.ward} options={wardsOf(f.zone)} onSelect={setWard} placeholder={f.zone ? 'ওয়ার্ড' : 'আগে অঞ্চল নির্বাচন করুন'} disabled={!f.zone} />
+        <FieldLabel text="সেক্টর/সেকশন" required />
+        <Dropdown value={f.sector} options={sectorsOf(f.zone, f.ward)} onSelect={setSector} placeholder={f.ward ? 'সেক্টর' : 'আগে ওয়ার্ড নির্বাচন করুন'} disabled={!f.ward} />
+        <FieldLabel text="এরিয়া/ব্লক" required />
+        <Dropdown value={f.area} options={areasOf(f.zone, f.ward, f.sector)} onSelect={setArea} placeholder={f.sector ? 'এরিয়া/ব্লক' : 'আগে সেক্টর নির্বাচন করুন'} disabled={!f.sector} />
+        <FieldLabel text="রোড" required />
+        <Dropdown value={f.road} options={roadsOf(f.zone, f.ward, f.sector, f.area)} onSelect={set('road')} placeholder={f.area ? 'রোড' : 'আগে এরিয়া নির্বাচন করুন'} disabled={!f.area} />
+        <FieldLabel text="প্লট/ হোল্ডিং নং" />
+        <StyledInput value={f.plotNo} onChangeText={set('plotNo')} />
+        <FieldLabel text="দোকান নং" />
+        <StyledInput value={f.shopNo} onChangeText={set('shopNo')} />
+      </View>
+
+      {/* Fee calculation */}
+      <View style={styles.card}>
+        <SectionHeader emoji="💰" title="ফি হিসাব" />
+        <Divider />
+        <FieldLabel text="লাইসেন্স ফি" />
+        <StyledInput value="১৫০০" onChangeText={() => {}} editable={false} />
+        <FieldLabel text="সাইন বোর্ড বর্গফুট" />
+        <StyledInput value={f.signBoardSqft} onChangeText={set('signBoardSqft')} keyboardType="numeric" />
+        <FieldLabel text="সাইন বোর্ড ফি" />
+        <Dropdown value={f.signBoardFee} options={SIGNBOARD_FEE} onSelect={set('signBoardFee')} />
+        <FieldLabel text="বই মূল্য" />
+        <StyledInput value={f.bookPrice} onChangeText={() => {}} editable={false} />
+        <FieldLabel text="ফর্ম ফি" />
+        <StyledInput value={f.formFee} onChangeText={() => {}} editable={false} />
+        <FieldLabel text="অন্যান্য ফি" />
+        <StyledInput value={f.otherFee} onChangeText={set('otherFee')} keyboardType="numeric" />
+        <FieldLabel text="একেত্রে কত বছরের ফি দিতে চান" />
+        <Dropdown value={f.yearsOfFee} options={YEAR_OPTIONS} onSelect={set('yearsOfFee')} />
+        <TouchableOpacity style={styles.calcBtn} onPress={handleCalc} activeOpacity={0.8}>
+          <Text style={styles.calcBtnText}>গণনা করুন</Text>
+        </TouchableOpacity>
+        <FieldLabel text="বাৎসরিক ভ্যাট" />
+        <StyledInput value={f.annualVat} onChangeText={() => {}} editable={false} />
+        <FieldLabel text="মোট ভ্যাট" />
+        <StyledInput value={f.totalVat} onChangeText={() => {}} editable={false} />
+        <FieldLabel text="আয়কর টাকা" />
+        <StyledInput value={f.incomeTax} onChangeText={() => {}} editable={false} />
+        <FieldLabel text="সর্বমোট মূল্য/সর্বমোট ধার্যকৃত মূল্য" />
+        <StyledInput value={f.grandTotal} onChangeText={() => {}} editable={false} />
+      </View>
+    </>
+  );
+
+  const renderStep4 = () => (
+    <View style={styles.card}>
+      <SectionHeader emoji="📎" title="সংযুক্তি" />
+      <Divider />
+      {sections.map(section => (
+        <View key={section.key} style={styles.attachSection}>
+          <TouchableOpacity style={styles.checkRow} onPress={() => toggleChecked(section.key)} activeOpacity={0.7}>
+            <View style={[styles.checkbox, section.checked && styles.checkboxChecked]}>
+              {section.checked && <MaterialIcons name="check" size={14} color={Colors.white} />}
+            </View>
+            <Text style={styles.checkLabel}>{section.label}</Text>
+            {section.checked && (
+              <TouchableOpacity onPress={() => toggleExpanded(section.key)} style={styles.expandBtn}>
+                <MaterialIcons name={section.expanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={22} color={Colors.primary} />
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+          {section.checked && section.expanded && (
+            <View style={styles.attachBody}>
+              <FieldLabel text="আইডি" />
+              <StyledInput value={section.aid} onChangeText={v => updateSection(section.key, { aid: v })} />
+              <FieldLabel text="মন্তব্য" />
+              <StyledInput value={section.remark} onChangeText={v => updateSection(section.key, { remark: v })} multiline />
+              {section.files.length > 0 && (
+                <View style={styles.fileList}>
+                  {section.files.map(fi => (
+                    <View key={fi.id} style={styles.fileCard}>
+                      {fi.isImage
+                        ? <TouchableOpacity onPress={() => setPreviewEntry(fi)}><Image source={{ uri: fi.uri }} style={styles.fileThumb} resizeMode="cover" /></TouchableOpacity>
+                        : <View style={styles.fileDocIcon}><MaterialIcons name="insert-drive-file" size={26} color={Colors.primary} /></View>}
+                      <Text style={styles.fileName} numberOfLines={1}>{fi.name}</Text>
+                      <TouchableOpacity onPress={() => deleteFile(section.key, fi.id)} style={styles.fileDeleteBtn}>
+                        <MaterialIcons name="delete-outline" size={22} color={Colors.danger} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <TouchableOpacity style={styles.uploadAttachBtn} onPress={() => openPickerFor(section.key)} activeOpacity={0.8}>
+                <MaterialIcons name="upload-file" size={18} color={Colors.white} />
+                <Text style={styles.uploadAttachBtnText}>সংযুক্ত করুন</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      ))}
+
+      {/* Agreement checkbox */}
+      <TouchableOpacity style={styles.agreeRow} onPress={() => setAgreed(v => !v)} activeOpacity={0.7}>
+        <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+          {agreed && <MaterialIcons name="check" size={14} color={Colors.white} />}
+        </View>
+        <Text style={styles.agreeText}>উপরের প্রদানকৃত যাবতীয় তথ্যাবলি সঠিক বলে আমি প্রতীয়মান করছি</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // ── Main JSX ──────────────────────────────────────────────────────────────
+  return (
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <MaterialIcons name="menu" size={26} color={Colors.white} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>নাগরিক পোর্টাল</Text>
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <MaterialIcons name="more-vert" size={26} color={Colors.white} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Step indicator */}
+      <View style={styles.stepWrapper}>
+        <Text style={styles.formTitle}>নতুন ট্রেড লাইসেন্স এর আবেদন</Text>
+        <StepIndicator current={step} />
+        <Text style={styles.stepCounter}>ধাপ {step} / {TOTAL_STEPS}</Text>
+      </View>
+
+      {/* Scrollable body */}
+      <ScrollView ref={scrollRef} style={styles.body} contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
+        {step === 4 && renderStep4()}
+        <View style={{ height: 12 }} />
+      </ScrollView>
+
+      {/* Wizard footer */}
+      <View style={styles.wizardFooter}>
+        <TouchableOpacity style={[styles.prevBtn, step === 1 && styles.btnDisabled]}
+          onPress={goPrev} disabled={step === 1} activeOpacity={0.8}>
+          <MaterialIcons name="chevron-left" size={20} color={step === 1 ? Colors.gray400 : Colors.primary} />
+          <Text style={[styles.prevBtnText, step === 1 && styles.btnTextDisabled]}>পূর্ববর্তী</Text>
+        </TouchableOpacity>
+
+        <View style={styles.dotRow}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <View key={i} style={[styles.dot, i + 1 === step && styles.dotActive]} />
+          ))}
+        </View>
+
+        {step < TOTAL_STEPS ? (
+          <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.8}>
+            <Text style={styles.nextBtnText}>পরবর্তী</Text>
+            <MaterialIcons name="chevron-right" size={20} color={Colors.white} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.finalBtns}>
+            <TouchableOpacity style={styles.previewBtn} onPress={() => Alert.alert('প্রিভিউ', 'প্রিভিউ দেখানো হচ্ছে...')} activeOpacity={0.8}>
+              <Text style={styles.previewBtnText}>প্রিভিউ</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} activeOpacity={0.8}>
+              <Text style={styles.submitBtnText}>দাখিল করুন</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* Bottom Tabs */}
+      <View style={styles.tabBar}>
+        {BOTTOM_TABS.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <TouchableOpacity key={tab.key} style={styles.tabItem} activeOpacity={0.7}
+              onPress={() => { setActiveTab(tab.key); if (tab.key === 'home') navigation.navigate('Dashboard'); }}>
+              <MaterialCommunityIcons name={tab.icon as any} size={22} color={active ? Colors.primary : Colors.gray500} />
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Source Picker Sheet */}
+      <Modal visible={showPickerSheet} transparent animationType="slide" onRequestClose={() => setShowPickerSheet(false)}>
+        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowPickerSheet(false)}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>ফাইল উৎস নির্বাচন করুন</Text>
+            <View style={styles.pickerRow}>
+              <TouchableOpacity style={styles.pickerOption} onPress={pickFromGallery} activeOpacity={0.7}>
+                <View style={[styles.pickerCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="photo-library" size={30} color="#1565C0" />
+                </View>
+                <Text style={styles.pickerLabel}>গ্যালারি</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.pickerOption} onPress={pickFromCamera} activeOpacity={0.7}>
+                <View style={[styles.pickerCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="camera-alt" size={30} color={Colors.primary} />
+                </View>
+                <Text style={styles.pickerLabel}>ক্যামেরা</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.pickerOption} onPress={pickDocument} activeOpacity={0.7}>
+                <View style={[styles.pickerCircle, { backgroundColor: '#FFF3E0' }]}>
+                  <MaterialIcons name="folder-open" size={30} color="#E65100" />
+                </View>
+                <Text style={styles.pickerLabel}>ফাইল</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.sheetCancelBtn} onPress={() => setShowPickerSheet(false)}>
+              <Text style={styles.sheetCancelText}>বাতিল</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Image Preview */}
+      <Modal visible={!!previewEntry} transparent animationType="fade" onRequestClose={() => setPreviewEntry(null)}>
+        <View style={styles.previewBackdrop}>
+          <TouchableOpacity style={styles.previewClose} onPress={() => setPreviewEntry(null)}>
+            <MaterialIcons name="close" size={28} color={Colors.white} />
+          </TouchableOpacity>
+          {previewEntry?.isImage && <Image source={{ uri: previewEntry.uri }} style={styles.previewImage} resizeMode="contain" />}
+          <View style={styles.previewFooter}>
+            <Text style={styles.previewFileName}>{previewEntry?.name}</Text>
+            <TouchableOpacity style={styles.previewDeleteBtn}
+              onPress={() => { const e = previewEntry!; setPreviewEntry(null); setSections(prev => prev.map(s => ({ ...s, files: s.files.filter(fi => fi.id !== e.id) }))); }}>
+              <MaterialIcons name="delete" size={20} color={Colors.white} />
+              <Text style={styles.previewDeleteText}>মুছুন</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.background },
+  header: { backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 12 },
+  headerTitle: { color: Colors.white, fontSize: FontSizes.xl, fontWeight: '700' },
+  stepWrapper: { backgroundColor: Colors.white, paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
+  formTitle: { fontSize: FontSizes.md, fontWeight: '700', color: Colors.primary, textAlign: 'center', marginBottom: Spacing.sm },
+  stepCounter: { fontSize: FontSizes.xs, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  stepCol: { alignItems: 'center', gap: 4 },
+  stepLine: { flex: 1, height: 2, backgroundColor: Colors.gray300, marginBottom: 18, marginHorizontal: 2 },
+  stepLineActive: { backgroundColor: Colors.primary },
+  stepCircle: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: Colors.gray300, backgroundColor: Colors.white, justifyContent: 'center', alignItems: 'center' },
+  stepCircleActive: { borderColor: Colors.primary, backgroundColor: Colors.primary },
+  stepCircleDone: { borderColor: Colors.primary, backgroundColor: Colors.primary },
+  stepNum: { fontSize: 10, fontWeight: '700', color: Colors.gray400 },
+  stepNumActive: { color: Colors.white },
+  stepLabel: { fontSize: 8, color: Colors.gray500, textAlign: 'center', maxWidth: 56 },
+  stepLabelActive: { color: Colors.primary, fontWeight: '700' },
+  body: { flex: 1 },
+  scrollContent: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: 8 },
+  card: { backgroundColor: Colors.white, borderRadius: BorderRadius.lg, padding: Spacing.md, marginBottom: Spacing.sm, shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  secHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  secHeaderEmoji: { fontSize: 20 },
+  secHeaderText: { fontSize: FontSizes.md, fontWeight: '700', color: Colors.textPrimary },
+  subTitle: { fontSize: FontSizes.md, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center', marginBottom: Spacing.md, marginTop: Spacing.sm },
+  divider: { height: 1, backgroundColor: Colors.gray200, marginBottom: Spacing.md },
+  fieldLabel: { fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '500', marginTop: Spacing.sm, marginBottom: 4 },
+  required: { color: Colors.danger, fontWeight: '700' },
+  inputWrapper: { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 44, marginBottom: 2, overflow: 'hidden' },
+  inputMulti: { minHeight: 72 },
+  inputDisabled: { backgroundColor: Colors.gray100, borderColor: Colors.gray200 },
+  textInput: { flex: 1, paddingHorizontal: Spacing.sm, paddingVertical: 10, fontSize: FontSizes.md, color: Colors.textPrimary },
+  textMulti: { textAlignVertical: 'top', paddingTop: 10 },
+  dropTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, paddingHorizontal: Spacing.sm, paddingVertical: 12, marginBottom: 2 },
+  dropDisabled: { backgroundColor: Colors.gray100, borderColor: Colors.gray200 },
+  dropValue: { fontSize: FontSizes.md, color: Colors.textPrimary, flex: 1 },
+  dropPlaceholder: { color: Colors.gray500 },
+  dropList: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.gray300, borderRadius: BorderRadius.md, marginBottom: 4, overflow: 'hidden' },
+  dropOption: { paddingVertical: 11, paddingHorizontal: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.gray200 },
+  dropOptionSel: { backgroundColor: Colors.primaryLight },
+  dropOptionText: { fontSize: FontSizes.md, color: Colors.textPrimary },
+  dropOptionTextSel: { color: Colors.primary, fontWeight: '600' },
+  attachBtn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, paddingVertical: 13, alignItems: 'center', marginTop: Spacing.md },
+  attachBtnText: { color: Colors.white, fontSize: FontSizes.md, fontWeight: '700' },
+  calcBtn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, paddingVertical: 13, alignItems: 'center', marginTop: Spacing.md, marginBottom: Spacing.sm },
+  calcBtnText: { color: Colors.white, fontSize: FontSizes.md, fontWeight: '700' },
+  fileRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.sm, gap: 6 },
+  chooseFileBtn: { backgroundColor: Colors.gray200, paddingVertical: 10, paddingHorizontal: 12, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.gray300 },
+  chooseFileBtnText: { fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '600' },
+  fileNameBox: { flex: 1, backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.gray300, paddingVertical: 10, paddingHorizontal: 8 },
+  fileNameText: { fontSize: FontSizes.sm, color: Colors.gray500 },
+  uploadBtn: { backgroundColor: Colors.primary, paddingVertical: 10, paddingHorizontal: 14, borderRadius: BorderRadius.sm },
+  uploadBtnText: { color: Colors.white, fontSize: FontSizes.sm, fontWeight: '700' },
+  attachSection: { borderWidth: 1, borderColor: Colors.gray200, borderRadius: BorderRadius.md, marginBottom: Spacing.sm, overflow: 'hidden' },
+  checkRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: Spacing.sm, backgroundColor: Colors.white, gap: 10 },
+  checkbox: { width: 22, height: 22, borderRadius: 4, borderWidth: 2, borderColor: Colors.gray400, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.white },
+  checkboxChecked: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  checkLabel: { flex: 1, fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '500', lineHeight: 20 },
+  expandBtn: { padding: 2 },
+  attachBody: { backgroundColor: Colors.primaryLight, paddingHorizontal: Spacing.sm, paddingBottom: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.gray200 },
+  fileList: { marginTop: Spacing.sm, gap: 6 },
+  fileCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.white, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.gray300, padding: 8 },
+  fileThumb: { width: 44, height: 44, borderRadius: 6 },
+  fileDocIcon: { width: 44, height: 44, borderRadius: 6, backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
+  fileName: { flex: 1, fontSize: FontSizes.sm, color: Colors.textPrimary },
+  fileDeleteBtn: { padding: 4 },
+  uploadAttachBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.primary, borderRadius: BorderRadius.md, paddingVertical: 11, marginTop: Spacing.sm },
+  uploadAttachBtnText: { color: Colors.white, fontSize: FontSizes.sm, fontWeight: '700' },
+  agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: Spacing.md, padding: Spacing.sm, backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md },
+  agreeText: { flex: 1, fontSize: FontSizes.sm, color: Colors.textPrimary, lineHeight: 20 },
+  wizardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 10, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.gray200 },
+  prevBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1.5, borderColor: Colors.primary, borderRadius: BorderRadius.md },
+  prevBtnText: { fontSize: FontSizes.sm, color: Colors.primary, fontWeight: '600' },
+  btnDisabled: { borderColor: Colors.gray300 },
+  btnTextDisabled: { color: Colors.gray400 },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.primary, paddingVertical: 10, paddingHorizontal: 14, borderRadius: BorderRadius.md },
+  nextBtnText: { fontSize: FontSizes.sm, color: Colors.white, fontWeight: '700' },
+  dotRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.gray300 },
+  dotActive: { backgroundColor: Colors.primary, width: 18 },
+  finalBtns: { flexDirection: 'row', gap: 8 },
+  previewBtn: { borderWidth: 1.5, borderColor: Colors.primary, borderRadius: BorderRadius.md, paddingVertical: 10, paddingHorizontal: 14 },
+  previewBtnText: { color: Colors.primary, fontSize: FontSizes.sm, fontWeight: '700' },
+  submitBtn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, paddingVertical: 10, paddingHorizontal: 14 },
+  submitBtnText: { color: Colors.white, fontSize: FontSizes.sm, fontWeight: '700' },
+  tabBar: { flexDirection: 'row', backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.gray200, paddingBottom: 8, paddingTop: 6 },
+  tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  tabLabel: { fontSize: 9, color: Colors.gray500, textAlign: 'center', fontWeight: '500' },
+  tabLabelActive: { color: Colors.primary, fontWeight: '700' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  bottomSheet: { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: Spacing.lg, paddingBottom: 32, paddingTop: 12 },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.gray300, alignSelf: 'center', marginBottom: 16 },
+  sheetTitle: { fontSize: FontSizes.lg, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.md, textAlign: 'center' },
+  pickerRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: Spacing.lg },
+  pickerOption: { alignItems: 'center', gap: 8 },
+  pickerCircle: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center' },
+  pickerLabel: { fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '500' },
+  sheetCancelBtn: { marginTop: Spacing.md, backgroundColor: Colors.gray100, borderRadius: BorderRadius.md, paddingVertical: 13, alignItems: 'center' },
+  sheetCancelText: { fontSize: FontSizes.md, color: Colors.textSecondary, fontWeight: '600' },
+  previewBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
+  previewClose: { position: 'absolute', top: 48, right: 20, zIndex: 10, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: 4 },
+  previewImage: { width: '92%', height: '65%' },
+  previewFooter: { position: 'absolute', bottom: 40, left: 0, right: 0, alignItems: 'center', gap: 8 },
+  previewFileName: { color: Colors.white, fontSize: FontSizes.sm },
+  previewDeleteBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.danger, borderRadius: BorderRadius.md, paddingVertical: 10, paddingHorizontal: 20, marginTop: 4 },
+  previewDeleteText: { color: Colors.white, fontSize: FontSizes.md, fontWeight: '700' },
+});

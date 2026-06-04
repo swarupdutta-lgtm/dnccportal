@@ -1,0 +1,7 @@
+node_modules/
+figma-exports/
+app.json
+.expo/
+android/
+DNCC Citizen Portal.apk
+website/
