@@ -83,10 +83,10 @@ const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
 // ─── Bottom Tab Bar ───────────────────────────────────────────────────────────
 function BottomTabBar({ navigation }: { navigation: any }) {
   const tabs = [
-    { icon: 'home-outline',              label: 'হোম',           screen: 'Dashboard'         },
-    { icon: 'office-building-outline',   label: 'হোল্ডিং ট্যাক্স', screen: 'HoldingTaxAbedon' },
-    { icon: 'file-document-outline',     label: 'ট্রেড লাইসেন্স', screen: 'TradeLicenseAbedon'},
-    { icon: 'store-outline',             label: 'হোটেল ট্যাক্স',  screen: 'Dashboard'         },
+    { key: 'home', icon: 'home-outline',              label: 'হোম',           screen: 'Dashboard'         },
+    { key: 'holding', icon: 'office-building-outline',   label: 'হোল্ডিং ট্যাক্স', screen: 'HoldingTaxAbedon' },
+    { key: 'trade', icon: 'file-document-outline',     label: 'ট্রেড লাইসেন্স', screen: 'TradeLicenseAbedon'},
+    { key: 'hotel', icon: 'store-outline',             label: 'হোটেল ট্যাক্স',  screen: ''         },
   ];
   return (
     <View style={styles.bottomBar}>

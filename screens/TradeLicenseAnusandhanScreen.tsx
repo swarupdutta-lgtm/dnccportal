@@ -50,7 +50,7 @@ export function TradeLicenseAnusandhanScreen({ navigation }: Props) {
               key={item.id}
               style={styles.card}
               activeOpacity={0.7}
-              onPress={() =>{alert(item.route); navigation.navigate(item.route, { title: item.title })}}
+              onPress={() =>{navigation.navigate(item.route, { title: item.title })}}
             >
               <View style={styles.cardIconCircle}>
                 <MaterialCommunityIcons name={item.icon as any} size={36} color={Colors.primary} />

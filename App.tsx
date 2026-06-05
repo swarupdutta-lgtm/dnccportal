@@ -64,23 +64,23 @@ export default function App() {
           {/* ── Holding Tax — sub-application forms ───────────────────────── */}
           <Stack.Screen name="NewHolding" component={HoldingApplicationScreen} />
           <Stack.Screen name="Namjari" component={NamjariApplicationScreen} />
-          <Stack.Screen name="Namjari_old">
+          {/* <Stack.Screen name="Namjari_old">
             {(props: any) => (
               <ApplicationFormScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'Namjari' } }}
               />
             )}
-          </Stack.Screen>
+          </Stack.Screen> */}
           <Stack.Screen name="Nayabadi" component={NayabadiApplicationScreen} />
-          <Stack.Screen name="Nayabadi_old">
+          {/* <Stack.Screen name="Nayabadi_old">
             {(props: any) => (
               <ApplicationFormScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'Nayabadi' } }}
               />
             )}
-          </Stack.Screen>
+          </Stack.Screen> */}
           <Stack.Screen name="FreedomFighter">
             {(props: any) => (
               <ApplicationFormScreen
@@ -93,14 +93,14 @@ export default function App() {
           {/* ── Trade License — application forms ─────────────────────────── */}
           <Stack.Screen name="NewTradeLicense" component={TradeLicenseApplicationScreen} />
         
-          <Stack.Screen name="NewTradeLicense_old">
+          {/* <Stack.Screen name="NewTradeLicense_old">
             {(props: any) => (
               <ApplicationFormScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'NewTradeLicense' } }}
               />
             )}
-          </Stack.Screen>
+          </Stack.Screen> */}
           <Stack.Screen name="OldTradeLicense" component={TradeLicenseApplicationScreen} />
           <Stack.Screen name="TradeLicenseChange">
             {(props: any) => (
@@ -144,7 +144,7 @@ export default function App() {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="TradeLicenseSearch">
+           <Stack.Screen name="TradeLicenseSearch">
             {(props: any) => (
               <SearchScreen
                 {...props}
@@ -154,7 +154,7 @@ export default function App() {
           </Stack.Screen>
           <Stack.Screen name="NewTLSearch">
             {(props: any) => (
-              <SearchScreen
+              <TradeLicenseSearchScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'TradeLicenseSearchScreen' } }}
               />
@@ -162,7 +162,7 @@ export default function App() {
           </Stack.Screen>
           <Stack.Screen name="OldTLSearch">
             {(props: any) => (
-              <SearchScreen
+              <TradeLicenseSearchScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'TradeLicenseSearchScreen' } }}
               />
@@ -170,7 +170,7 @@ export default function App() {
           </Stack.Screen>
           <Stack.Screen name="ChangeTLSearch">
             {(props: any) => (
-              <SearchScreen
+              <TradeLicenseSearchScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'TradeLicenseSearchScreen' } }}
               />

@@ -39,16 +39,16 @@ const HOLDING_TAX_ITEMS = [
   { id: '6',labelid:'h_payment', label: 'পরিশোধের বিবরণ', image: null, icon: 'credit-card-outline' ,screens:'OnlinePaymentDetails'},
 ];
 const TRADE_LICENSE_ITEMS = [
-  { id: '1', label: 'আবেদন',       icon: 'file-document-outline' ,screens:'TradeLicenseAbedon'},
-  { id: '2', label: 'অনুসন্ধান',    icon: 'file-search-outline',screens:'TradeLicenseAnusandhan' },
-  { id: '3', label: 'ফি অনুসন্ধান', icon: 'cash-multiple' },
-  { id: '4', label: 'প্রিন্ট',      icon: 'printer-outline' },
-  { id: '5', label: 'রিনিউ',       icon: 'refresh' },
+  { id: 'tl_1', label: 'আবেদন',       icon: 'file-document-outline' ,screens:'TradeLicenseAbedon'},
+  { id: 'tl_2', label: 'অনুসন্ধান',    icon: 'file-search-outline',screens:'TradeLicenseAnusandhan' },
+  { id: 'tl_3', label: 'ফি অনুসন্ধান', icon: 'cash-multiple' },
+  { id: 'tl_4', label: 'প্রিন্ট',      icon: 'printer-outline' },
+  { id: 'tl_5', label: 'রিনিউ',       icon: 'refresh' },
 ];
 const HOTEL_TAX_ITEMS = [
-  { id: '1', label: 'নম্বর নিবন্ধীকরণ', icon: 'home-city-outline' },
-  { id: '2', label: 'ড্যাশবোর্ড',        icon: 'view-dashboard-outline' },
-  { id: '3', label: 'পেমেন্ট জেনারেট',   icon: 'receipt' },
+  { id: 'ht_1', label: 'নম্বর নিবন্ধীকরণ', icon: 'home-city-outline' },
+  { id: 'ht_2', label: 'ড্যাশবোর্ড',        icon: 'view-dashboard-outline' },
+  { id: 'ht_3', label: 'পেমেন্ট জেনারেট',   icon: 'receipt' },
 ];
 const BOTTOM_TABS = [
   { key: 'home',    label: 'হোম',            icon: 'home-outline' },
