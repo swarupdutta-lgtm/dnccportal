@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
 
   // Field
   fieldLabel: { fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '500', marginBottom: 6, marginTop: Spacing.sm },
-  inputWrapper: { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 48, justifyContent: 'center', marginBottom: 4, overflow: 'hidden' },
+  inputWrapper: { backgroundColor: Colors.gray200, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 48, justifyContent: 'center', marginBottom: 4, overflow: 'hidden' },
   inputReadOnly: { backgroundColor: Colors.gray100, borderColor: Colors.gray200 },
   textInput: { paddingHorizontal: Spacing.md, paddingVertical: 10, fontSize: FontSizes.md, color: Colors.textPrimary },
 

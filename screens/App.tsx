@@ -21,7 +21,7 @@ import { QuickPayScreen }                   from './screens/QuickPayScreen';
 import { OnlinePaymentDetailsScreen }       from './screens/OnlinePaymentDetailsScreen';
 import { TradeLicenseApplicationScreen }    from './screens/TradeLicenseApplicationScreen';
 import { ApplicationFormScreen }  from './screens/ApplicationFormScreen';
-import { SearchScreen }           from './screens/SearchScreen';
+//import { SearchScreen }           from './screens/SearchScreen';
 
 const Stack = createNativeStackNavigator();
 

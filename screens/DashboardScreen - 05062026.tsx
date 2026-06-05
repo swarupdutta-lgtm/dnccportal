@@ -179,15 +179,15 @@ function SidebarAccordion({ item, onChildPress }: { item: any; onChildPress: (ch
     <View>
       <TouchableOpacity style={styles.sidebarAccordionRow} onPress={toggle} activeOpacity={0.7}>
         <View style={styles.sidebarRowLeft}>
-          <MaterialIcons name="grid-view" size={16} color={Colors.primary} style={styles.sidebarRowIcon} />
+          <MaterialIcons name="grid-view" size={16} color={Colors.white} style={styles.sidebarRowIcon} />
           <Text style={styles.sidebarItemLabel}>{item.label}</Text>
         </View>
-        <MaterialIcons name={open ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={20} color={Colors.black} />
+        <MaterialIcons name={open ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={20} color={Colors.white} />
       </TouchableOpacity>
       {open && item.children?.map((child: any) => (
         <TouchableOpacity key={child.id} style={styles.sidebarChildRow} activeOpacity={0.7}
           onPress={() => onChildPress(child)}>
-          <MaterialIcons name="chevron-right" size={16} color={Colors.white} style={styles.sidebarRowIcon} />
+          <MaterialIcons name="chevron-right" size={16} color={Colors.gray200} style={styles.sidebarRowIcon} />
           <Text style={styles.sidebarChildLabel}>{child.label}</Text>
         </TouchableOpacity>
       ))}
@@ -210,7 +210,7 @@ function SidebarSection({ section, onItemPress }: { section: any; onItemPress: (
           <TouchableOpacity key={child.id} style={styles.sidebarItemRow} activeOpacity={0.7}
             onPress={() => onItemPress(child)}>
             <View style={styles.sidebarRowLeft}>
-              <MaterialIcons name="grid-view" size={16} color={Colors.primary} style={styles.sidebarRowIcon} />
+              <MaterialIcons name="grid-view" size={16} color={Colors.white} style={styles.sidebarRowIcon} />
               <Text style={styles.sidebarItemLabel}>{child.label}</Text>
             </View>
           </TouchableOpacity>
@@ -358,11 +358,7 @@ export function DashboardScreen({ navigation, route }: Props) {
           {/* DNCC Top */}
           <View style={styles.sidebarTop}>
             <View style={styles.dnccLogoCircle}>
-              <Image
-                source={require('../assets/logo.png')}
-                style={{ width: 36, height: 36, borderRadius: 18 }}
-                resizeMode="contain"
-              />
+              <MaterialCommunityIcons name="shield-crown-outline" size={28} color={Colors.white} />
             </View>
             <Text style={styles.dnccTitle}>DNCC</Text>
           </View>
@@ -370,9 +366,7 @@ export function DashboardScreen({ navigation, route }: Props) {
           {/* Username */}
           <TouchableOpacity style={styles.usernameRow} activeOpacity={0.8}>
             <View style={styles.sidebarRowLeft}>
-              <View style={styles.userIconBox}>
-                <Ionicons name="person-outline" size={20} color={Colors.white} />
-              </View>
+              <Ionicons name="person-outline" size={18} color={Colors.white} />
               <Text style={[styles.usernameLabel, { marginLeft: 10 }]}>{email}</Text>
             </View>
           </TouchableOpacity>
@@ -387,10 +381,10 @@ export function DashboardScreen({ navigation, route }: Props) {
             }}
           >
             <View style={styles.sidebarRowLeft}>
-              <MaterialIcons name="grid-view" size={16} color={Colors.primary} style={styles.sidebarRowIcon} />
+              <MaterialIcons name="grid-view" size={16} color={Colors.white} style={styles.sidebarRowIcon} />
               <Text style={styles.sidebarItemLabel}>হোম</Text>
             </View>
-            <MaterialIcons name={homeOpen ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={20} color={Colors.textPrimary} />
+            <MaterialIcons name={homeOpen ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={20} color={Colors.white} />
           </TouchableOpacity>
 
           {SIDEBAR_NAV.map((section) => (
@@ -486,24 +480,23 @@ const styles = StyleSheet.create({
 
   // ── Left Sidebar ──────────────────────────────────────────────────────────
   sidebar: { position: 'absolute', top: 0, left: 0, bottom: 0, width: SIDEBAR_WIDTH, backgroundColor: Colors.primary, zIndex: 20, shadowColor: Colors.black, shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 16 },
-  sidebarTop: { backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingTop: 52, paddingBottom: Spacing.md, gap: Spacing.sm },
+  sidebarTop: { backgroundColor: Colors.primaryDark, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingTop: 48, paddingBottom: Spacing.md, gap: Spacing.sm },
   dnccLogoCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.white },
   dnccTitle: { color: Colors.white, fontSize: FontSizes.xl, fontWeight: '800', letterSpacing: 1 },
-  usernameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 14, backgroundColor: Colors.primary, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.gray200 },
+  usernameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.primaryDark },
   usernameLabel: { color: Colors.white, fontSize: FontSizes.md, fontWeight: '600' },
-  homeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 13, backgroundColor: Colors.white, marginHorizontal: Spacing.md, marginTop: Spacing.sm, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.gray200 },
-  sidebarSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.md, paddingVertical: 10, marginTop: Spacing.md },
+  homeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 13, backgroundColor: Colors.white + '22', marginHorizontal: Spacing.md, marginTop: Spacing.sm, borderRadius: BorderRadius.sm },
+  sidebarSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.md, paddingVertical: 10, marginTop: Spacing.sm },
   sidebarSectionLabel: { color: Colors.white, fontSize: FontSizes.md, fontWeight: '700', letterSpacing: 0.3 },
-  sidebarItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: Spacing.md, backgroundColor: Colors.white, marginHorizontal: Spacing.md, marginBottom: 4, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.gray200 },
+  sidebarItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: Spacing.md, backgroundColor: Colors.white + '15', marginHorizontal: Spacing.md, marginBottom: 4, borderRadius: BorderRadius.sm },
   sidebarRowLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   sidebarRowIcon: { marginRight: 10 },
-  sidebarItemLabel: { color: Colors.textPrimary, fontSize: FontSizes.sm, fontWeight: '500', flex: 1 },
-  sidebarAccordionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: Spacing.md, backgroundColor: Colors.white, marginHorizontal: Spacing.md, marginBottom: 4, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: Colors.gray200 },
+  sidebarItemLabel: { color: Colors.white, fontSize: FontSizes.sm, fontWeight: '500', flex: 1 },
+  sidebarAccordionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: Spacing.md, backgroundColor: Colors.white + '15', marginHorizontal: Spacing.md, marginBottom: 4, borderRadius: BorderRadius.sm },
   sidebarChildRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingLeft: Spacing.xl + 4, paddingRight: Spacing.md, marginHorizontal: Spacing.md, marginBottom: 2 },
-  sidebarChildLabel: { color: Colors.white, fontSize: FontSizes.sm, fontWeight: '400', marginLeft: 4 },
+  sidebarChildLabel: { color: Colors.gray200, fontSize: FontSizes.sm, fontWeight: '400' },
   logoutRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingVertical: 14, marginTop: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.primaryDark },
   logoutLabel: { color: '#FFF', fontSize: FontSizes.md, fontWeight: '600' },
-  userIconBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
 
   // ── Right Kebab Panel ─────────────────────────────────────────────────────
   kebabPanel: {

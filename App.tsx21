@@ -22,9 +22,7 @@ import { OnlinePaymentDetailsScreen }       from './screens/OnlinePaymentDetails
 import { TradeLicenseApplicationScreen }    from './screens/TradeLicenseApplicationScreen';
 import { TradeLicenseAnusandhanScreen }     from './screens/TradeLicenseAnusandhanScreen';
 import { TradeLicenseAbedonScreen }         from './screens/TradeLicenseAbedonScreen';
-import { TradeLicenseSearchScreen }        from './screens/TradeLicenseSearchScreen'
 import { ApplicationFormScreen }  from './screens/ApplicationFormScreen';
-
 
 const Stack = createNativeStackNavigator();
 
@@ -92,7 +90,6 @@ export default function App() {
 
           {/* ── Trade License — application forms ─────────────────────────── */}
           <Stack.Screen name="NewTradeLicense" component={TradeLicenseApplicationScreen} />
-        
           <Stack.Screen name="NewTradeLicense_old">
             {(props: any) => (
               <ApplicationFormScreen
@@ -101,7 +98,14 @@ export default function App() {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="OldTradeLicense" component={TradeLicenseApplicationScreen} />
+          <Stack.Screen name="OldTradeLicense">
+            {(props: any) => (
+              <ApplicationFormScreen
+                {...props}
+                route={{ ...props.route, params: { title: 'OldTradeLicense' } }}
+              />
+            )}
+          </Stack.Screen>
           <Stack.Screen name="TradeLicenseChange">
             {(props: any) => (
               <ApplicationFormScreen
@@ -156,7 +160,7 @@ export default function App() {
             {(props: any) => (
               <SearchScreen
                 {...props}
-                route={{ ...props.route, params: { title: 'TradeLicenseSearchScreen' } }}
+                route={{ ...props.route, params: { title: 'NewTLSearch' } }}
               />
             )}
           </Stack.Screen>
@@ -164,7 +168,7 @@ export default function App() {
             {(props: any) => (
               <SearchScreen
                 {...props}
-                route={{ ...props.route, params: { title: 'TradeLicenseSearchScreen' } }}
+                route={{ ...props.route, params: { title: 'OldTLSearch' } }}
               />
             )}
           </Stack.Screen>
@@ -172,7 +176,7 @@ export default function App() {
             {(props: any) => (
               <SearchScreen
                 {...props}
-                route={{ ...props.route, params: { title: 'TradeLicenseSearchScreen' } }}
+                route={{ ...props.route, params: { title: 'ChangeTLSearch' } }}
               />
             )}
           </Stack.Screen>

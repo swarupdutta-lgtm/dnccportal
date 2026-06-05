@@ -17,7 +17,7 @@ const BOTTOM_TABS = [
 ];
 
 const SEARCH_ITEMS = [
-  { id: '1', label: 'নতুন',            icon: 'file-document-plus-outline', route: 'NewTradeLicense',    title: 'NewTLSearch' },
+  { id: '1', label: 'নতুন',            icon: 'file-document-plus-outline', route: 'NewTLSearch',    title: 'NewTLSearch' },
   { id: '2', label: 'পুরাতন',          icon: 'file-document-outline',      route: 'OldTLSearch',    title: 'OldTLSearch' },
   { id: '3', label: 'পরিবর্তন/\nসংশোধন', icon: 'file-document-edit-outline', route: 'ChangeTLSearch', title: 'ChangeTLSearch' },
 ];
@@ -50,7 +50,7 @@ export function TradeLicenseAnusandhanScreen({ navigation }: Props) {
               key={item.id}
               style={styles.card}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(item.route, { title: item.title })}
+              onPress={() =>{alert(item.route); navigation.navigate(item.route, { title: item.title })}}
             >
               <View style={styles.cardIconCircle}>
                 <MaterialCommunityIcons name={item.icon as any} size={36} color={Colors.primary} />
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   card: { width: '33.33%', alignItems: 'center', marginBottom: Spacing.lg, paddingHorizontal: 4 },
   cardIconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Colors.gray200, justifyContent: 'center', alignItems: 'center',
     marginBottom: 8, borderWidth: 1.5, borderColor: Colors.gray200,
     shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08, shadowRadius: 4, elevation: 2,

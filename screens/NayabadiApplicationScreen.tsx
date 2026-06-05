@@ -612,13 +612,13 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '500', marginTop: Spacing.sm, marginBottom: 4 },
   required: { color: Colors.danger, fontWeight: '700' },
 
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 44, marginBottom: 2, overflow: 'hidden' },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.gray200, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 44, marginBottom: 2, overflow: 'hidden' },
   inputWrapperMulti: { alignItems: 'flex-start', minHeight: 72 },
   inputDisabled: { backgroundColor: Colors.gray100 },
   textInput: { flex: 1, paddingHorizontal: Spacing.sm, paddingVertical: 10, fontSize: FontSizes.md, color: Colors.textPrimary },
   textInputMulti: { textAlignVertical: 'top', paddingTop: 10 },
 
-  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, paddingHorizontal: Spacing.sm, paddingVertical: 12, marginBottom: 2 },
+  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.gray200, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, paddingHorizontal: Spacing.sm, paddingVertical: 12, marginBottom: 2 },
   dropdownDisabled: { backgroundColor: Colors.gray100, borderColor: Colors.gray200 },
   dropdownValue: { fontSize: FontSizes.md, color: Colors.textPrimary, flex: 1 },
   dropdownPlaceholder: { color: Colors.gray500 },

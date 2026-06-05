@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   card: { width: '33.33%', alignItems: 'center', marginBottom: Spacing.lg, paddingHorizontal: 4 },
   cardIconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Colors.gray200, justifyContent: 'center', alignItems: 'center',
     marginBottom: 8, borderWidth: 1.5, borderColor: Colors.gray200,
     shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08, shadowRadius: 4, elevation: 2,

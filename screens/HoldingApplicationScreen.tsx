@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
   // Input
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.gray200, borderRadius: BorderRadius.md,
     borderWidth: 1, borderColor: Colors.gray300, minHeight: 44,
     marginBottom: 2, overflow: 'hidden',
   },
@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
   // Dropdown
   dropdownTrigger: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.gray200, borderRadius: BorderRadius.md,
     borderWidth: 1, borderColor: Colors.gray300,
     paddingHorizontal: Spacing.sm, paddingVertical: 12, marginBottom: 2,
   },

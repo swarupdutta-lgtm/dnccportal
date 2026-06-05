@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     fontWeight: '500', marginBottom: 6,
   },
   inputWrapper: {
-    backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.gray200, borderRadius: BorderRadius.md,
     borderWidth: 1, borderColor: Colors.gray300,
     minHeight: 48, justifyContent: 'center',
     marginBottom: Spacing.md, overflow: 'hidden',

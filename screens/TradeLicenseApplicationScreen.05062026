@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-type Props = NativeStackScreenProps<any, 'NewTradeLicense' | 'OldTradeLicense'>;
+type Props = NativeStackScreenProps<any, 'NewTradeLicense'>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TOTAL_STEPS = 4;
@@ -159,8 +159,7 @@ function StepIndicator({ current }: { current: number }) {
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-export function TradeLicenseApplicationScreen({ navigation, route }: Props) {
-  const isOld = route.name === 'OldTradeLicense';
+export function TradeLicenseApplicationScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState('trade');
   const [step, setStep]           = useState(1);
   const scrollRef                 = useRef<ScrollView>(null);
@@ -200,10 +199,6 @@ export function TradeLicenseApplicationScreen({ navigation, route }: Props) {
     signBoardSqft: '০', signBoardFee: 'সাইন বোর্ড ফি',
     bookPrice: '২৭০', formFee: '০', otherFee: '৫০০',
     yearsOfFee: '১',
-    // Old TL extra
-    issuedLicenseNo: '',
-    issuedLicenseDate: '20-Apr-2026',
-    renewalEffectiveDate: '20-Apr-2026',
     annualVat: '০', totalVat: '০', incomeTax: '০', grandTotal: '০',
   });
 
@@ -230,9 +225,6 @@ export function TradeLicenseApplicationScreen({ navigation, route }: Props) {
     }
     if (step === 3 && (!f.zone || !f.ward || !f.sector || !f.area || !f.road)) {
       Alert.alert('ত্রুটি', 'অনুগ্রহ করে সম্পত্তির অবস্থান পূরণ করুন।'); return false;
-    }
-    if (step === 3 && isOld && (!f.issuedLicenseNo || !f.issuedLicenseDate || !f.renewalEffectiveDate)) {
-      Alert.alert('ত্রুটি', 'পুরাতন লাইসেন্সের বাধ্যতামূলক তথ্য পূরণ করুন।'); return false;
     }
     return true;
   };
@@ -444,28 +436,6 @@ export function TradeLicenseApplicationScreen({ navigation, route }: Props) {
         <StyledInput value={f.otherFee} onChangeText={set('otherFee')} keyboardType="numeric" />
         <FieldLabel text="একেত্রে কত বছরের ফি দিতে চান" />
         <Dropdown value={f.yearsOfFee} options={YEAR_OPTIONS} onSelect={set('yearsOfFee')} />
-        {/* Old TL extra fields — only shown for পুরাতন */}
-        {isOld && (
-          <>
-            <FieldLabel text="ইস্যুকৃত লাইসেন্স নং (পুরাতনের ক্ষেত্রে)" required />
-            <StyledInput value={f.issuedLicenseNo} onChangeText={set('issuedLicenseNo')} />
-
-            <FieldLabel text="ইস্যুকৃত লাইসেন্স তারিখ (পুরাতনের ক্ষেত্রে)" required />
-            <StyledInput
-              value={f.issuedLicenseDate}
-              onChangeText={set('issuedLicenseDate')}
-              placeholder="dd-Mon-yyyy"
-            />
-
-            <FieldLabel text="নবায়ন কার্যকর করার তারিখ (পুরাতনের ক্ষেত্রে)" required />
-            <StyledInput
-              value={f.renewalEffectiveDate}
-              onChangeText={set('renewalEffectiveDate')}
-              placeholder="dd-Mon-yyyy"
-            />
-          </>
-        )}
-
         <TouchableOpacity style={styles.calcBtn} onPress={handleCalc} activeOpacity={0.8}>
           <Text style={styles.calcBtnText}>গণনা করুন</Text>
         </TouchableOpacity>
@@ -556,7 +526,7 @@ export function TradeLicenseApplicationScreen({ navigation, route }: Props) {
 
       {/* Step indicator */}
       <View style={styles.stepWrapper}>
-        <Text style={styles.formTitle}>{isOld ? 'পুরাতন' : 'নতুন'} ট্রেড লাইসেন্স এর আবেদন</Text>
+        <Text style={styles.formTitle}>নতুন ট্রেড লাইসেন্স এর আবেদন</Text>
         <StepIndicator current={step} />
         <Text style={styles.stepCounter}>ধাপ {step} / {TOTAL_STEPS}</Text>
       </View>
@@ -699,12 +669,12 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: Colors.gray200, marginBottom: Spacing.md },
   fieldLabel: { fontSize: FontSizes.sm, color: Colors.textPrimary, fontWeight: '500', marginTop: Spacing.sm, marginBottom: 4 },
   required: { color: Colors.danger, fontWeight: '700' },
-  inputWrapper: { backgroundColor: Colors.gray200, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 44, marginBottom: 2, overflow: 'hidden' },
+  inputWrapper: { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, minHeight: 44, marginBottom: 2, overflow: 'hidden' },
   inputMulti: { minHeight: 72 },
   inputDisabled: { backgroundColor: Colors.gray100, borderColor: Colors.gray200 },
   textInput: { flex: 1, paddingHorizontal: Spacing.sm, paddingVertical: 10, fontSize: FontSizes.md, color: Colors.textPrimary },
   textMulti: { textAlignVertical: 'top', paddingTop: 10 },
-  dropTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.gray200, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, paddingHorizontal: Spacing.sm, paddingVertical: 12, marginBottom: 2 },
+  dropTrigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray300, paddingHorizontal: Spacing.sm, paddingVertical: 12, marginBottom: 2 },
   dropDisabled: { backgroundColor: Colors.gray100, borderColor: Colors.gray200 },
   dropValue: { fontSize: FontSizes.md, color: Colors.textPrimary, flex: 1 },
   dropPlaceholder: { color: Colors.gray500 },
