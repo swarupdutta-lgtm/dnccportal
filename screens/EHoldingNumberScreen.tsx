@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
+import { BottomTabBar } from '../components/BottomTabBar';
 type Props = NativeStackScreenProps<any, 'EHoldingNumber'>;
 
 const BOTTOM_TABS = [
@@ -71,7 +71,7 @@ export function EHoldingNumberScreen({ navigation }: Props) {
   const handleDone = () => navigation.goBack();
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
 
       {/* Header */}
@@ -172,7 +172,7 @@ export function EHoldingNumberScreen({ navigation }: Props) {
       </View>
 
       {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
+      {/* <View style={styles.tabBar}>
         {BOTTOM_TABS.map(tab => {
           const active = activeTab === tab.key;
           return (
@@ -186,7 +186,8 @@ export function EHoldingNumberScreen({ navigation }: Props) {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </View> */}
+      <BottomTabBar navigation={navigation} activeKey="holding" />
     </SafeAreaView>
   );
 }

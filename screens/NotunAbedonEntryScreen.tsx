@@ -18,7 +18,7 @@ import { DateInput } from '../components/DateInput';
 import { FileUpload } from '../components/FileUpload';
 import { Button } from '../components/Button';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
-
+import { BottomTabBar } from '../components/BottomTabBar';
 // ─── DROPDOWN CONFIG DATA ────────────────────────────────────────────────────
 const GEOLOCATION_DATA = {
   zones: [

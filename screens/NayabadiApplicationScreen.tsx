@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
+import { BottomTabBar } from '../components/BottomTabBar';
 type Props = NativeStackScreenProps<any, 'Nayabadi'>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -439,7 +439,7 @@ export function NayabadiApplicationScreen({ navigation }: Props) {
 
   // ─── JSX ─────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
 
       {/* Header */}
@@ -502,7 +502,7 @@ export function NayabadiApplicationScreen({ navigation }: Props) {
       </View>
 
       {/* Bottom tabs */}
-      <View style={styles.tabBar}>
+      {/* <View style={styles.tabBar}>
         {BOTTOM_TABS.map(tab => {
           const active = activeTab === tab.key;
           return (
@@ -513,8 +513,8 @@ export function NayabadiApplicationScreen({ navigation }: Props) {
             </TouchableOpacity>
           );
         })}
-      </View>
-
+      </View> */}
+    <BottomTabBar navigation={navigation} activeKey="holding" />
       {/* ══ Source Picker Bottom Sheet ══ */}
       <Modal visible={showPickerSheet} transparent animationType="slide" onRequestClose={() => setShowPickerSheet(false)}>
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowPickerSheet(false)}>

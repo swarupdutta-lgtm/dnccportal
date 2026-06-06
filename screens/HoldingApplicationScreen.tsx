@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
+import { BottomTabBar } from '../components/BottomTabBar';
 type Props = NativeStackScreenProps<any, 'NewHolding'>;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -548,7 +548,7 @@ export function HoldingApplicationScreen({ navigation }: Props) {
   );
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
 
       {/* ── Header ── */}
@@ -620,7 +620,7 @@ export function HoldingApplicationScreen({ navigation }: Props) {
       </View>
 
       {/* ── Bottom Tab Bar ── */}
-      <View style={styles.tabBar}>
+      {/* <View style={styles.tabBar}>
         {BOTTOM_TABS.map((tab) => {
           const active = activeTab === tab.key;
           return (
@@ -644,8 +644,8 @@ export function HoldingApplicationScreen({ navigation }: Props) {
             </TouchableOpacity>
           );
         })}
-      </View>
-
+      </View> */}
+      <BottomTabBar navigation={navigation} activeKey="holding" />
       {/* ══ TYPE SELECTION BOTTOM SHEET ══ */}
       <Modal visible={showTypeSheet} transparent animationType="slide" onRequestClose={() => setShowTypeSheet(false)}>
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowTypeSheet(false)}>

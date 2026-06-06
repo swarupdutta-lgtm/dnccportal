@@ -117,7 +117,7 @@ export function SearchScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.root}>
-      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.headerSafeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backButton}>← ড্যাশবোর্ড</Text>

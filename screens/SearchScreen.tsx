@@ -8,7 +8,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
+import { BottomTabBar } from '../components/BottomTabBar';
 type Props = NativeStackScreenProps<any, 'HoldingSearch'>;
 
 // ─── Config per screen type ───────────────────────────────────────────────────
@@ -137,7 +137,7 @@ export function SearchScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
 
       {/* ── Header ── */}
@@ -257,7 +257,7 @@ export function SearchScreen({ navigation, route }: Props) {
       </ScrollView>
 
       {/* ── Bottom Tabs ── */}
-      <View style={styles.tabBar}>
+      {/* <View style={styles.tabBar}>
         {BOTTOM_TABS.map(tab => {
           const active = activeTab === tab.key;
           return (
@@ -268,7 +268,8 @@ export function SearchScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </View> */}
+      <BottomTabBar navigation={navigation} activeKey="holding" />
     </SafeAreaView>
   );
 }

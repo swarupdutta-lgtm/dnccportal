@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-
+import { BottomTabBar } from '../components/BottomTabBar';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -41,9 +41,9 @@ const HOLDING_TAX_ITEMS = [
 const TRADE_LICENSE_ITEMS = [
   { id: 'tl_1', label: 'আবেদন',       icon: 'file-document-outline' ,screens:'TradeLicenseAbedon'},
   { id: 'tl_2', label: 'অনুসন্ধান',    icon: 'file-search-outline',screens:'TradeLicenseAnusandhan' },
-  { id: 'tl_3', label: 'ফি অনুসন্ধান', icon: 'cash-multiple' },
-  { id: 'tl_4', label: 'প্রিন্ট',      icon: 'printer-outline' },
-  { id: 'tl_5', label: 'রিনিউ',       icon: 'refresh' },
+  { id: 'tl_3', label: 'ফি অনুসন্ধান', icon: 'cash-multiple',screens:'' },
+  { id: 'tl_4', label: 'প্রিন্ট',      icon: 'printer-outline',screens:''  },
+  { id: 'tl_5', label: 'রিনিউ',       icon: 'refresh',screens:''  },
 ];
 const HOTEL_TAX_ITEMS = [
   { id: 'ht_1', label: 'নম্বর নিবন্ধীকরণ', icon: 'home-city-outline' },
@@ -286,7 +286,7 @@ export function DashboardScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
 
       {/* ── Header ── */}
@@ -322,6 +322,10 @@ export function DashboardScreen({ navigation, route }: Props) {
           title="ট্রেড লাইসেন্স"
           items={TRADE_LICENSE_ITEMS}
           onItemPress={(item) => {
+            if (item.screens===''){
+              alert('Under Construction!')
+              return;
+            } 
             navigation.navigate(item.screens);
             //if (item.label === 'অনুসন্ধান') navigation.navigate('TradeLicenseSearch', { title: 'TradeLicenseSearch' });
           }}
@@ -331,7 +335,7 @@ export function DashboardScreen({ navigation, route }: Props) {
       </ScrollView>
 
       {/* ── Bottom Tab Bar ── */}
-      <View style={styles.tabBar}>
+      {/* <View style={styles.tabBar}>
         {BOTTOM_TABS.map((tab) => {
           const active = activeTab === tab.key;
           return (
@@ -341,8 +345,8 @@ export function DashboardScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           );
         })}
-      </View>
-
+      </View> */}
+      <BottomTabBar navigation={navigation} activeKey="home" />
       {/* ── Shared Overlay ── */}
       {(sidebarOpen || kebabOpen) && (
         <Animated.View style={[styles.overlay, { opacity: overlayAnim }]} pointerEvents="auto">

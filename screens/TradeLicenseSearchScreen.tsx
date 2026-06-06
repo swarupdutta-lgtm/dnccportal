@@ -1,496 +1,356 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  StatusBar,
-  SafeAreaView,
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  StatusBar, ScrollView, ActivityIndicator,
 } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Colors, Spacing, FontSizes, BorderRadius } from '../theme/colors';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BottomTabBar } from '../components/BottomTabBar';
+type Props = NativeStackScreenProps<any, 'NewTLSearch' | 'OldTLSearch' | 'ChangeTLSearch' | 'TradeLicenseSearch'>;
 
-// ─── Theme ───────────────────────────────────────────────────────────────────
-const Colors = {
-  primary:      '#00853F',
-  primaryDark:  '#006B33',
-  primaryLight: '#E8F5E9',
-  white:        '#FFFFFF',
-  background:   '#F4F6F5',
-  textPrimary:  '#212121',
-  textSecondary:'#666666',
-  border:       '#E0E0E0',
-  gray100:      '#F5F5F5',
-};
+// ─── Config per screen type ───────────────────────────────────────────────────
+interface FieldConfig { key: string; label: string; keyboardType?: any; }
 
-const Spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 };
-const FontSizes = { xs: 11, sm: 12, md: 13, base: 14, lg: 16, xl: 18 };
-
-// ─── Screen config per route ──────────────────────────────────────────────────
-const SCREEN_CONFIG: Record<string, {
+interface ScreenConfig {
   title: string;
-  viewTarget: string;
-}> = {
-  NewTLSearch:    { title: 'নতুন ট্রেড লাইসেন্সের আবেদন অনুসন্ধান',        viewTarget: 'NewTradeLicense'    },
-  OldTLSearch:    { title: 'পুরাতন ট্রেড লাইসেন্সের আবেদন অনুসন্ধান',     viewTarget: 'OldTradeLicense'    },
-  ChangeTLSearch: { title: 'পরিবর্তন/সংশোধন ট্রেড লাইসেন্স অনুসন্ধান',    viewTarget: 'TradeLicenseChange' },
-  TradeLicenseSearch: { title: 'ট্রেড লাইসেন্স অনুসন্ধান',                 viewTarget: 'NewTradeLicense'    },
+  fields: FieldConfig[];
+  detailScreen: string | null;
+}
+
+const SCREEN_CONFIG: Record<string, ScreenConfig> = {
+  NewTLSearch: {
+    title: 'নতুন ট্রেড লাইসেন্সের আবেদন অনুসন্ধান',
+    fields: [
+      { key: 'appNo',         label: 'আবেদন নম্বর' },
+      { key: 'applicantName', label: 'আবেদনকারীর নাম' },
+    ],
+    detailScreen: 'NewTradeLicense',
+  },
+  OldTLSearch: {
+    title: 'পুরাতন ট্রেড লাইসেন্সের আবেদন অনুসন্ধান',
+    fields: [
+      { key: 'tlNo',         label: 'ট্রেড লাইসেন্স নং' },
+      { key: 'issuedOldNo',  label: 'ইস্যুকৃত পুরাতন লাইসেন্স নং' },
+    ],
+    detailScreen: 'OldTradeLicense',
+  },
+  ChangeTLSearch: {
+    title: 'পরিবর্তন/সংশোধন আবেদন অনুসন্ধান',
+    fields: [
+      { key: 'tlNo',     label: 'ট্রেড লাইসেন্স নং' },
+      { key: 'docketNo', label: 'ডকেট নম্বর' },
+    ],
+    detailScreen: 'TradeLicenseChange',
+  },
+  TradeLicenseSearch: {
+    title: 'ট্রেড লাইসেন্স অনুসন্ধান',
+    fields: [
+      { key: 'appNo',         label: 'আবেদন নম্বর' },
+      { key: 'applicantName', label: 'আবেদনকারীর নাম' },
+    ],
+    detailScreen: 'NewTradeLicense',
+  },
 };
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Result columns (same for all types) ─────────────────────────────────────
 const MOCK_RESULTS = [
   {
-    id: '1',
-    serial:    '১',
-    appNo:     'APPH/DNCC/000331/2025',
-    name:      'সুমিত সরকার',
-    bizName:   'আয়াজ এন্টারপ্রাইজ',
-    bizType:   'বুটিকস',
-    date:      '21 Apr 2026',
-    status:    'Initiated',
+    serial: '১',
+    appNo: 'APPH/DNCC/000331/2025',
+    applicantName: 'সুমিত সরকার',
+    bizName: 'আয়াজ এন্টারপ্রাইজ',
+    bizType: 'বুটিকস',
+    date: '21 Apr 2026',
+    status: 'Initiated',
   },
   {
-    id: '2',
-    serial:    '২',
-    appNo:     'APPH/DNCC/000412/2025',
-    name:      'রাহেলা বেগম',
-    bizName:   'রাহেলা স্টোর',
-    bizType:   'মুদি দোকান',
-    date:      '15 Mar 2026',
-    status:    'Pending',
+    serial: '২',
+    appNo: 'APPH/DNCC/000412/2025',
+    applicantName: 'রাহেলা বেগম',
+    bizName: 'রাহেলা ফার্মেসি',
+    bizType: 'ফার্মেসি',
+    date: '15 Mar 2026',
+    status: 'Pending',
   },
   {
-    id: '3',
-    serial:    '৩',
-    appNo:     'APPH/DNCC/000519/2025',
-    name:      'করিম উদ্দিন',
-    bizName:   'করিম ট্রেডার্স',
-    bizType:   'পাইকারী',
-    date:      '02 Feb 2026',
-    status:    'Approved',
+    serial: '৩',
+    appNo: 'APPH/DNCC/000519/2025',
+    applicantName: 'মোঃ করিম',
+    bizName: 'করিম স্টোর',
+    bizType: 'মুদি দোকান',
+    date: '08 Feb 2026',
+    status: 'Approved',
   },
 ];
 
-const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
-  Initiated: { bg: '#E3F2FD', text: '#1565C0' },
-  Pending:   { bg: '#FFF3E0', text: '#E65100' },
-  Approved:  { bg: '#E8F5E9', text: '#2E7D32' },
-  Rejected:  { bg: '#FFEBEE', text: '#C62828' },
+const STATUS_COLOR: Record<string, string> = {
+  Initiated: '#1565C0',
+  Pending:   '#E65100',
+  Approved:  '#2E7D32',
+  Rejected:  '#C62828',
 };
 
-// ─── Bottom Tab Bar ───────────────────────────────────────────────────────────
-function BottomTabBar({ navigation }: { navigation: any }) {
-  const tabs = [
-    { key: 'home', icon: 'home-outline',              label: 'হোম',           screen: 'Dashboard'         },
-    { key: 'holding', icon: 'office-building-outline',   label: 'হোল্ডিং ট্যাক্স', screen: 'HoldingTaxAbedon' },
-    { key: 'trade', icon: 'file-document-outline',     label: 'ট্রেড লাইসেন্স', screen: 'TradeLicenseAbedon'},
-    { key: 'hotel', icon: 'store-outline',             label: 'হোটেল ট্যাক্স',  screen: ''         },
-  ];
-  return (
-    <View style={styles.bottomBar}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab.screen}
-          style={styles.tabItem}
-          onPress={() => navigation.navigate(tab.screen)}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name={tab.icon as any} size={22} color={Colors.white} />
-          <Text style={styles.tabLabel}>{tab.label}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
+const BOTTOM_TABS = [
+  { key: 'home',    label: 'হোম',            icon: 'home-outline' },
+  { key: 'holding', label: 'হোল্ডিং ট্যাক্স', icon: 'office-building-outline' },
+  { key: 'trade',   label: 'ট্রেড লাইসেন্স',  icon: 'license' },
+  { key: 'hotel',   label: 'হোটেল ট্যাক্স',   icon: 'bed-outline' },
+];
 
-// ─── Result Card ──────────────────────────────────────────────────────────────
-function ResultCard({
-  item,
-  onView,
-}: {
-  item: typeof MOCK_RESULTS[0];
-  onView: () => void;
+// ─── Result Row ───────────────────────────────────────────────────────────────
+function ResultRow({ label, value, isStatus, statusColor, isView, onView }: {
+  label: string; value?: string;
+  isStatus?: boolean; statusColor?: string;
+  isView?: boolean; onView?: () => void;
 }) {
-  const statusStyle = STATUS_COLOR[item.status] ?? STATUS_COLOR['Initiated'];
-
-  const rows: { label: string; value: React.ReactNode }[] = [
-    { label: 'ক্রমিক সংখ্যা',           value: item.serial  },
-    { label: 'আবেদন নম্বর',              value: item.appNo   },
-    { label: 'আবেদনকারীর নাম',           value: item.name    },
-    { label: 'ব্যবসা প্রতিষ্ঠানের নাম',  value: item.bizName },
-    { label: 'ব্যবসার ধরণ',              value: item.bizType },
-    { label: 'আবেদনের তারিখ',            value: item.date    },
-    {
-      label: 'আবেদনের স্থিতি',
-      value: (
-        <View style={[styles.badge, { backgroundColor: statusStyle.bg }]}>
-          <Text style={[styles.badgeText, { color: statusStyle.text }]}>{item.status}</Text>
-        </View>
-      ),
-    },
-    {
-      label: 'আবেদনের স্থিতি',
-      value: (
-        <TouchableOpacity
-          style={styles.viewBtn}
-          onPress={onView}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="eye-outline" size={18} color={Colors.white} />
-        </TouchableOpacity>
-      ),
-    },
-  ];
-
   return (
-    <View style={styles.card}>
-      {rows.map((row, idx) => (
-        <View
-          key={idx}
-          style={[
-            styles.row,
-            idx === rows.length - 1 && { borderBottomWidth: 0 },
-          ]}
-        >
-          <Text style={styles.rowLabel}>{row.label}</Text>
-          {typeof row.value === 'string' ? (
-            <Text style={styles.rowValue}>{row.value}</Text>
-          ) : (
-            <View style={styles.rowValueContainer}>{row.value}</View>
-          )}
+    <View style={styles.dataRow}>
+      <Text style={styles.dataLabel}>{label}</Text>
+      {isView ? (
+        <TouchableOpacity style={styles.viewBtn} onPress={onView} activeOpacity={0.7}>
+          <MaterialIcons name="visibility" size={18} color={Colors.white} />
+        </TouchableOpacity>
+      ) : isStatus ? (
+        <View style={[styles.statusBadge, { backgroundColor: (statusColor ?? '#1565C0') + '22' }]}>
+          <Text style={[styles.statusText, { color: statusColor ?? '#1565C0' }]}>{value}</Text>
         </View>
-      ))}
+      ) : (
+        <Text style={styles.dataValue}>{value}</Text>
+      )}
     </View>
   );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-type Props = {
-  navigation: any;
-  route: any;
-};
-
 export function TradeLicenseSearchScreen({ navigation, route }: Props) {
-  const routeName: string = route?.name ?? 'NewTLSearch';
-  const config = SCREEN_CONFIG[routeName] ?? SCREEN_CONFIG['NewTLSearch'];
+  const screenType = route?.name ?? (route?.params as any)?.title ?? 'NewTLSearch';
+  //(route?.params as any)?.title ?? route?.name ?? 'NewTLSearch';
+  const config     = SCREEN_CONFIG[screenType] ?? SCREEN_CONFIG['NewTLSearch'];
 
-  const [appNo,   setAppNo]   = useState('');
-  const [appName, setAppName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<typeof MOCK_RESULTS>([]);
-  const [searched, setSearched] = useState(false);
+  const [activeTab, setActiveTab] = useState('trade');
+  const [loading, setLoading]     = useState(false);
+  const [results, setResults]     = useState<typeof MOCK_RESULTS>([]);
+  const [searched, setSearched]   = useState(false);
+
+  // Dynamic field values keyed by field.key
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const setField = (key: string) => (val: string) =>
+    setFieldValues(prev => ({ ...prev, [key]: val }));
 
   const handleSearch = () => {
     setLoading(true);
+    setResults([]);
     setTimeout(() => {
+      setLoading(false);
       setResults(MOCK_RESULTS);
       setSearched(true);
-      setLoading(false);
-    }, 1200);
+    }, 900);
   };
 
   const handleView = (item: typeof MOCK_RESULTS[0]) => {
-    navigation.navigate(config.viewTarget, { applicationData: item });
+    if (!config.detailScreen) return;
+    navigation.navigate(config.detailScreen, { appNo: item.appNo, readOnly: true });
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <MaterialCommunityIcons name="menu" size={26} color={Colors.white} />
+        <TouchableOpacity onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <MaterialIcons name="menu" size={26} color={Colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>নাগরিক পোর্টাল</Text>
-        <TouchableOpacity activeOpacity={0.7}>
-          <MaterialCommunityIcons name="dots-vertical" size={26} color={Colors.white} />
+        <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <MaterialIcons name="more-vert" size={26} color={Colors.white} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Page Title ── */}
-        <Text style={styles.pageTitle}>{config.title}</Text>
+      <ScrollView style={styles.body} contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* ── Search Section ── */}
-        <View style={styles.section}>
-          {/* Section Header */}
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune" size={16} color={Colors.primary} />
+        {/* ── Search Card ── */}
+        <View style={styles.card}>
+          {/* Screen-specific title */}
+          <Text style={styles.cardTitle}>{config.title}</Text>
+
+          {/* Section header */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionEmoji}>🖐</Text>
             <Text style={styles.sectionHeaderText}>অনুসন্ধানের যায়গা</Text>
           </View>
+          <View style={styles.divider} />
 
-          {/* আবেদন নম্বর */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>আবেদন নম্বর</Text>
-            <TextInput
-              style={styles.input}
-              value={appNo}
-              onChangeText={setAppNo}
-              placeholder=""
-              placeholderTextColor="#BDBDBD"
-            />
-          </View>
+          {/* Dynamic search fields — changes per screen type */}
+          {config.fields.map((field, idx) => (
+            <View key={field.key}>
+              <Text style={styles.fieldLabel}>{field.label}</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.textInput}
+                  value={fieldValues[field.key] ?? ''}
+                  onChangeText={setField(field.key)}
+                  keyboardType={field.keyboardType ?? 'default'}
+                  placeholderTextColor={Colors.gray400}
+                  returnKeyType={idx < config.fields.length - 1 ? 'next' : 'search'}
+                  onSubmitEditing={idx === config.fields.length - 1 ? handleSearch : undefined}
+                />
+              </View>
+            </View>
+          ))}
 
-          {/* আবেদনকারীর নাম */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>আবেদনকারীর নাম</Text>
-            <TextInput
-              style={styles.input}
-              value={appName}
-              onChangeText={setAppName}
-              placeholder=""
-              placeholderTextColor="#BDBDBD"
-            />
-          </View>
-
-          {/* Search Button */}
-          <TouchableOpacity
-            style={styles.searchBtn}
-            onPress={handleSearch}
-            activeOpacity={0.85}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.white} size="small" />
-            ) : (
-              <Text style={styles.searchBtnText}>অনুসন্ধান করুন</Text>
-            )}
+          {/* Search button */}
+          <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} activeOpacity={0.8}>
+            {loading
+              ? <ActivityIndicator color={Colors.white} />
+              : <>
+                  <MaterialIcons name="search" size={20} color={Colors.white} />
+                  <Text style={styles.searchBtnText}>অনুসন্ধান করুন</Text>
+                </>
+            }
           </TouchableOpacity>
         </View>
 
-        {/* ── Results ── */}
-        {searched && !loading && (
-          <View style={styles.resultsContainer}>
-            {results.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <MaterialCommunityIcons name="file-search-outline" size={40} color={Colors.primary} />
-                <Text style={styles.emptyText}>কোনো ফলাফল পাওয়া যায়নি</Text>
-              </View>
-            ) : (
-              results.map((item) => (
-                <ResultCard
-                  key={item.id}
-                  item={item}
-                  onView={() => handleView(item)}
-                />
-              ))
-            )}
+        {/* ── Result Cards ── */}
+        {results.map(item => (
+          <View key={item.appNo} style={styles.resultCard}>
+            <ResultRow label="ক্রমিক সংখ্যা"           value={item.serial} />
+            <ResultRow label="আবেদন নম্বর"              value={item.appNo} />
+            <ResultRow label="আবেদনকারীর নাম"           value={item.applicantName} />
+            <ResultRow label="ব্যবসা প্রতিষ্ঠানের নাম"  value={item.bizName} />
+            <ResultRow label="ব্যবসার ধরণ"              value={item.bizType} />
+            <ResultRow label="আবেদনের তারিখ"            value={item.date} />
+            <ResultRow label="আবেদনের স্থিতি"
+              value={item.status} isStatus
+              statusColor={STATUS_COLOR[item.status]} />
+            <ResultRow label="আবেদনের স্থিতি"
+              isView onView={() => handleView(item)} />
+          </View>
+        ))}
+
+        {/* Empty state */}
+        {searched && results.length === 0 && !loading && (
+          <View style={styles.emptyBox}>
+            <MaterialIcons name="search-off" size={44} color={Colors.gray400} />
+            <Text style={styles.emptyText}>কোনো ফলাফল পাওয়া যায়নি।</Text>
           </View>
         )}
+
+        <View style={{ height: 16 }} />
       </ScrollView>
 
-      {/* ── Bottom Tab Bar ── */}
-      <BottomTabBar navigation={navigation} />
+      {/* Bottom Tabs */}
+      {/* <View style={styles.tabBar}>
+        {BOTTOM_TABS.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <TouchableOpacity key={tab.key} style={styles.tabItem} activeOpacity={0.7}
+              onPress={() => {
+                setActiveTab(tab.key);
+                if (tab.key === 'home') navigation.navigate('Dashboard');
+              }}>
+              <MaterialCommunityIcons name={tab.icon as any} size={22}
+                color={active ? Colors.primary : Colors.gray500} />
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View> */}
+      <BottomTabBar navigation={navigation} activeKey="trade" />
     </SafeAreaView>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.primary,
-  },
+  root: { flex: 1, backgroundColor: Colors.background },
 
-  // Header
   header: {
-    backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: 12,
   },
-  headerTitle: {
-    color: Colors.white,
-    fontSize: FontSizes.lg,
-    fontWeight: '700',
-  },
+  headerTitle: { color: Colors.white, fontSize: FontSizes.xl, fontWeight: '700' },
 
-  // Scroll
-  scroll: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-    paddingBottom: 100,
-  },
+  body: { flex: 1 },
+  scrollContent: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: 16 },
 
-  // Page title
-  pageTitle: {
-    fontSize: FontSizes.base,
-    fontWeight: '700',
-    color: Colors.primary,
-    textAlign: 'center',
-    marginBottom: Spacing.lg,
+  // Search card
+  card: {
+    backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
+    padding: Spacing.md, marginBottom: Spacing.md,
+    shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
   },
+  cardTitle: {
+    fontSize: FontSizes.md, fontWeight: '700', color: Colors.primary,
+    textAlign: 'center', marginBottom: Spacing.md,
+  },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  sectionEmoji: { fontSize: 20 },
+  sectionHeaderText: { fontSize: FontSizes.md, fontWeight: '700', color: Colors.textPrimary },
+  divider: { height: 1, backgroundColor: Colors.gray200, marginBottom: Spacing.md },
 
-  // Section card
-  section: {
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: Spacing.md,
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  sectionHeaderText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-
-  // Field
-  fieldGroup: {
-    marginBottom: Spacing.md,
-  },
   fieldLabel: {
-    fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
-    fontWeight: '500',
+    fontSize: FontSizes.sm, color: Colors.textPrimary,
+    fontWeight: '500', marginBottom: 6, marginTop: Spacing.xs,
   },
-  input: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 6,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    fontSize: FontSizes.base,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  inputWrapper: {
+    backgroundColor: Colors.gray200, borderRadius: BorderRadius.md,
+    borderWidth: 1, borderColor: Colors.gray300,
+    minHeight: 48, justifyContent: 'center',
+    marginBottom: Spacing.sm, overflow: 'hidden',
   },
-
-  // Search button
+  textInput: {
+    paddingHorizontal: Spacing.md, paddingVertical: 10,
+    fontSize: FontSizes.md, color: Colors.textPrimary,
+  },
   searchBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    marginTop: Spacing.xs,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, backgroundColor: Colors.primary, borderRadius: BorderRadius.md,
+    paddingVertical: 14, marginTop: Spacing.sm,
   },
-  searchBtnText: {
-    color: Colors.white,
-    fontSize: FontSizes.base,
-    fontWeight: '700',
-  },
-
-  // Results
-  resultsContainer: {
-    gap: Spacing.md,
-  },
+  searchBtnText: { color: Colors.white, fontSize: FontSizes.md, fontWeight: '700' },
 
   // Result card
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+  resultCard: {
+    backgroundColor: Colors.white, borderRadius: BorderRadius.lg,
+    overflow: 'hidden', marginBottom: Spacing.sm,
+    shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    minHeight: 42,
+  dataRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 12, paddingHorizontal: Spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.gray200, gap: 8,
   },
-  rowLabel: {
-    flex: 1.1,
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-    paddingRight: Spacing.xs,
+  dataLabel: {
+    fontSize: FontSizes.sm, color: Colors.textSecondary,
+    fontWeight: '600', flex: 1.2,
   },
-  rowValue: {
-    flex: 1.4,
-    fontSize: FontSizes.xs,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-    textAlign: 'right',
+  dataValue: {
+    fontSize: FontSizes.sm, color: Colors.textPrimary,
+    fontWeight: '500', flex: 1.4, textAlign: 'right',
   },
-  rowValueContainer: {
-    flex: 1.4,
-    alignItems: 'flex-end',
-  },
-
-  // Badge
-  badge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: FontSizes.xs,
-    fontWeight: '600',
-  },
-
-  // View button
+  statusBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  statusText: { fontSize: FontSizes.xs, fontWeight: '700' },
   viewBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 20,
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary, borderRadius: BorderRadius.sm, padding: 7,
   },
 
   // Empty
-  emptyBox: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl * 2,
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    gap: Spacing.sm,
-  },
-  emptyText: {
-    fontSize: FontSizes.base,
-    color: Colors.textSecondary,
-  },
+  emptyBox: { alignItems: 'center', paddingVertical: Spacing.xl, gap: 10 },
+  emptyText: { fontSize: FontSizes.md, color: Colors.gray500 },
 
-  // Bottom bar
-  bottomBar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.primary,
-    paddingBottom: 8,
-    paddingTop: 6,
+  // Bottom tabs
+  tabBar: {
+    flexDirection: 'row', backgroundColor: Colors.white,
+    borderTopWidth: 1, borderTopColor: Colors.gray200, paddingBottom: 8, paddingTop: 6,
   },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  tabLabel: {
-    color: Colors.white,
-    fontSize: FontSizes.xs - 1,
-    fontWeight: '500',
-  },
+  tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  tabLabel: { fontSize: 9, color: Colors.gray500, textAlign: 'center', fontWeight: '500' },
+  tabLabelActive: { color: Colors.primary, fontWeight: '700' },
 });
-
-export default TradeLicenseSearchScreen;

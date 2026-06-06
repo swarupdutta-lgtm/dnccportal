@@ -197,7 +197,7 @@ export function DashboardScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: Colors.primary }}>
+      <SafeAreaView edges={['top', 'bottom']} style={{ backgroundColor: Colors.primary }}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.headerIconBtn} onPress={() => setSidebarOpen(true)}>
             <MaterialCommunityIcons name="menu" size={24} color={Colors.white} />

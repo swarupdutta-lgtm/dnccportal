@@ -24,7 +24,7 @@ import { TradeLicenseAnusandhanScreen }     from './screens/TradeLicenseAnusandh
 import { TradeLicenseAbedonScreen }         from './screens/TradeLicenseAbedonScreen';
 import { TradeLicenseSearchScreen }        from './screens/TradeLicenseSearchScreen'
 import { ApplicationFormScreen }  from './screens/ApplicationFormScreen';
-
+import { TradeLicenseChangeScreen } from './screens/TradeLicenseChangeScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -92,7 +92,7 @@ export default function App() {
 
           {/* ── Trade License — application forms ─────────────────────────── */}
           <Stack.Screen name="NewTradeLicense" component={TradeLicenseApplicationScreen} />
-        
+          <Stack.Screen name="TradeLicenseChange" component={TradeLicenseChangeScreen} />
           {/* <Stack.Screen name="NewTradeLicense_old">
             {(props: any) => (
               <ApplicationFormScreen
@@ -102,14 +102,14 @@ export default function App() {
             )}
           </Stack.Screen> */}
           <Stack.Screen name="OldTradeLicense" component={TradeLicenseApplicationScreen} />
-          <Stack.Screen name="TradeLicenseChange">
+          {/* <Stack.Screen name="TradeLicenseChange">
             {(props: any) => (
               <ApplicationFormScreen
                 {...props}
                 route={{ ...props.route, params: { title: 'TradeLicenseChange' } }}
               />
             )}
-          </Stack.Screen>
+          </Stack.Screen> */}
 
           {/* ── Search screens ─────────────────────────────────────────────── */}
           <Stack.Screen name="HoldingSearch">
